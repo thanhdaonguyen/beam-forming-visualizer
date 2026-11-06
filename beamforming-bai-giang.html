@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bài giảng beamforming</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+:root{
+  --paper:#F2F4F6; --stage:#E6EAEE; --line:#D3D9DF; --ink:#15202B; --muted:#5B6773;
+  --cobalt:#2747D6; --cobalt-soft:#DCE3FB; --amber:#D9900B; --danger:#C8372D; --guide:#8B96A1; --body:#3B4652;
+  --wave-pos:#D9900B; --wave-neg:#2747D6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1720; --stage:#131E29; --line:#243241; --ink:#E6EDF3; --muted:#8C9AA8;
+    --cobalt:#7F97FF; --cobalt-soft:#1E2A52; --amber:#F2B13A; --danger:#FF6B5E; --guide:#5E6B78; --body:#C9D3DD;
+    --wave-pos:#F2B13A; --wave-neg:#7F97FF;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--cobalt)}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.top{border-bottom:1px solid var(--line);padding:12px 24px;display:flex;gap:18px;flex-wrap:wrap;font-size:14px;align-items:center}
+.top b{font-weight:600;margin-right:auto}
+.top a{text-decoration:none}
+.top a:hover{text-decoration:underline}
+.wrap{display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px;max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+nav.toc{position:sticky;top:24px;align-self:start;font-size:14px;line-height:1.5}
+nav.toc p{margin:0 0 10px;font-weight:600}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc;margin:0 0 8px}
+nav.toc a{color:var(--muted);text-decoration:none;display:flex;gap:8px}
+nav.toc a::before{content:counter(toc);font-variant-numeric:tabular-nums;color:var(--guide);min-width:1.2em}
+nav.toc a:hover,nav.toc a.on{color:var(--cobalt)}
+article{max-width:740px}
+header.hero h1{font-size:34px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;margin:0 0 14px}
+header.hero p{font-size:18px;color:var(--muted);margin:0 0 8px}
+section{margin-top:56px;scroll-margin-top:20px}
+h2{font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;margin:0 0 14px;display:flex;gap:12px;align-items:baseline}
+h2 .n{color:var(--cobalt);font-variant-numeric:tabular-nums;font-weight:500}
+h3{font-size:18px;font-weight:600;margin:28px 0 8px}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin-bottom:6px}
+.katex-display{margin:18px 0;overflow-x:auto;overflow-y:hidden;padding:4px 0}
+.callout{border-left:3px solid var(--cobalt);padding:4px 0 4px 16px;margin:18px 0;color:var(--ink)}
+.callout p:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0 18px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:14px;color:var(--muted)}
+td.num,th.num{text-align:right}
+.scroll{overflow-x:auto}
+figure{margin:24px 0 28px;background:var(--stage);border-radius:14px;padding:18px 18px 14px;width:min(900px,calc(100vw - 340px))}
+figure canvas{display:block;width:100%;touch-action:none}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.55}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 22px;margin-bottom:14px}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:4px}
+.val{font-weight:500;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--cobalt) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cobalt)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+.btn{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--guide)}
+.btn.primary{background:var(--cobalt);border-color:var(--cobalt);color:var(--paper)}
+.pills{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+.pills button{font:inherit;font-size:13.5px;border:0;background:transparent;color:var(--muted);padding:6px 12px;cursor:pointer}
+.pills button+button{border-left:1px solid var(--line)}
+.pills button[aria-pressed="true"]{background:var(--cobalt-soft);color:var(--cobalt);font-weight:500}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:12px}
+.readouts div{background:var(--paper);padding:8px 12px}
+.readouts dt{font-size:12.5px;color:var(--muted)}
+.readouts dd{margin:0;font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.readouts dd.warn{color:var(--danger)}
+.twin{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0 0}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:4px}
+.svgfig svg{width:100%;height:auto;display:block}
+.svgfig text{font-family:inherit}
+.embed{margin-top:14px}
+.embed iframe{width:100%;height:620px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.try li{margin-bottom:10px}
+.refs li{font-size:15px}
+@media (max-width:1000px){ .wrap{grid-template-columns:minmax(0,1fr);gap:0;padding-top:24px} nav.toc{display:none} figure{width:100%} }
+@media (max-width:640px){ body{font-size:16px} .wrap{padding:20px 16px 60px} header.hero h1{font-size:27px} .twin{grid-template-columns:1fr} figure{padding:14px 12px 12px;border-radius:12px} .embed iframe{height:560px} .top{padding:10px 16px} }
+</style>
+</head>
+<body>
+<div class="top">
+  <b>Beamforming cho UAV-BS</b>
+  <a href="beam-3d.html">Mô hình búp sóng 3D</a>
+  <a href="uav-beamforming.html">UAV lái búp tới người dùng</a>
+  <a href="my-dinh-uav.html">Lễ hội tại Mỹ Đình</a>
+</div>
+<div class="wrap">
+  <nav class="toc" aria-label="Mục lục">
+    <p>Nội dung</p>
+    <ol>
+      <li><a href="#vi-sao">Vì sao cần beamforming</a></li>
+      <li><a href="#giao-thoa">Trực giác: giao thoa sóng</a></li>
+      <li><a href="#mang-tuyen-tinh">Toán học của mảng tuyến tính</a></li>
+      <li><a href="#con-so">Những con số cần nhớ</a></li>
+      <li><a href="#phan-tu">Phần tử anten và phép nhân búp</a></li>
+      <li><a href="#mang-phang">Mảng phẳng</a></li>
+      <li><a href="#kien-truc">Ai tạo ra trọng số</a></li>
+      <li><a href="#quan-ly-bup">Chọn búp trong 5G NR</a></li>
+      <li><a href="#doc-beam-3d">Đọc mô hình búp sóng 3D</a></li>
+      <li><a href="#uav">Áp dụng cho UAV-BS</a></li>
+      <li><a href="#doc-them">Tài liệu đọc thêm</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <header class="hero">
+      <h1>Beamforming: từ giao thoa sóng đến búp sóng của UAV-BS</h1>
+      <p>Bài giảng đi từ trực giác vật lý đến công thức, rồi đến cách đọc mô hình búp sóng 3D. Mỗi phần có một hình tương tác để bạn tự kiểm chứng.</p>
+    </header>
+
+    <section id="vi-sao">
+      <h2><span class="n">1</span>Vì sao cần beamforming</h2>
+      <p>Một anten đẳng hướng rải năng lượng đều ra mọi hướng. Phần lớn năng lượng đó không tới người dùng đang được phục vụ, và phần đi lạc trở thành nhiễu cho các trạm khác dùng chung tần số.</p>
+      <p>Beamforming dùng nhiều anten nhỏ phát cùng một tín hiệu, mỗi anten lệch nhau một chút về pha, để dồn năng lượng về một hướng. Nó mang lại ba lợi ích:</p>
+      <ul>
+        <li><b>Tăng tín hiệu:</b> mảng có N phần tử cho thêm độ lợi tới 10·log₁₀N dB theo hướng búp chính.</li>
+        <li><b>Giảm nhiễu:</b> búp hẹp ít chiếu vào người dùng của trạm khác, và có thể đặt điểm không (null) đúng vào hướng gây nhiễu.</li>
+        <li><b>Ghép kênh không gian:</b> nhiều búp đồng thời phục vụ nhiều người dùng trên cùng tài nguyên tần số, gọi là MU-MIMO.</li>
+      </ul>
+      <p>Ở băng mmWave, beamforming gần như bắt buộc. Suy hao không gian tự do tăng theo 20·log₁₀f, nên lên 26 GHz mất thêm khoảng 17,4 dB so với 3,5 GHz. Bù lại, bước sóng ngắn cho phép xếp rất nhiều phần tử: ở 26 GHz, λ ≈ 11,5 mm, nên mảng 16×16 phần tử cách nhau λ/2 chỉ rộng khoảng 9 cm. Cùng mảng 8×8 ở 3,5 GHz đã rộng khoảng 34 cm.</p>
+    </section>
+
+    <section id="giao-thoa">
+      <h2><span class="n">2</span>Trực giác: giao thoa sóng</h2>
+      <p>Hình dưới mô phỏng sóng phát ra từ một hàng anten ở cạnh dưới, mỗi anten cách nhau nửa bước sóng. Màu cam là đỉnh sóng, màu xanh là đáy sóng.</p>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="w-n">Số anten</label><span class="val" id="w-no"></span></div><input type="range" id="w-n" min="1" max="8" step="1" value="6"></div>
+          <div><div class="field-top"><label for="w-p">Lệch pha giữa hai anten liền kề Δφ</label><span class="val" id="w-po"></span></div><input type="range" id="w-p" min="-180" max="180" step="5" value="60"></div>
+          <div style="display:flex;align-items:end;gap:8px"><button class="btn" id="w-play" aria-pressed="true">Tạm dừng</button></div>
+        </div>
+        <canvas id="wave" height="340" aria-label="Mô phỏng giao thoa sóng từ một hàng anten"></canvas>
+        <figcaption>Đường nét đứt là hướng búp dự đoán bởi công thức ở mục 3: sin θ₀ = Δφ / π khi các anten cách nhau λ/2. Thử Δφ = 0 để búp hướng thẳng lên, rồi tăng dần để thấy búp nghiêng sang phải.</figcaption>
+      </figure>
+      <p>Khi mọi anten phát cùng pha (Δφ = 0), đỉnh sóng từ các anten tới cùng lúc ở hướng vuông góc với hàng anten, nên chúng cộng dồn. Ở các hướng khác, đỉnh của anten này gặp đáy của anten kia và triệt tiêu.</p>
+      <p>Khi làm trễ dần từng anten một lượng pha Δφ, mặt sóng chung bị nghiêng, và búp quay theo. Không có bộ phận nào xoay cơ học, chỉ có pha thay đổi. Vì thế thiết bị này được gọi là <i>mảng pha</i> (phased array).</p>
+      <div class="callout"><p>Thử tăng số anten từ 2 lên 8 ở cùng một Δφ. Búp hẹp lại và sáng hơn: đó chính là độ lợi mảng.</p></div>
+    </section>
+
+    <section id="mang-tuyen-tinh">
+      <h2><span class="n">3</span>Toán học của mảng tuyến tính</h2>
+      <p>Xét N anten xếp thẳng hàng, cách nhau d. Một sóng đi theo hướng θ (đo từ pháp tuyến của mảng) tới anten thứ n muộn hơn anten đầu một quãng đường n·d·sinθ, tương ứng lệch pha 2π·n·d·sinθ/λ. Gom các lệch pha này thành <i>vector lái</i> (steering vector):</p>
+      $$\mathbf a(\theta)=\Big[\,1,\; e^{\,j2\pi\frac{d}{\lambda}\sin\theta},\; \dots,\; e^{\,j2\pi\frac{d}{\lambda}(N-1)\sin\theta}\Big]^{\mathsf T}$$
+      <p>Mỗi anten nhân tín hiệu với một trọng số phức w<sub>n</sub> (biên độ và pha). Độ lợi theo hướng θ là:</p>
+      $$G(\theta)=\big|\mathbf w^{\mathsf H}\mathbf a(\theta)\big|^2,\qquad \|\mathbf w\|=1$$
+      <p>Để búp hướng về θ₀, chọn trọng số bằng chính vector lái của hướng đó: w = a(θ₀)/√N. Khi đó các số hạng ở hướng θ₀ có cùng pha, cộng thẳng hàng và cho G(θ₀) = N. Với trọng số đều, độ lợi có dạng đóng:</p>
+      $$G(\theta)=\frac{1}{N}\,\frac{\sin^2(N\psi/2)}{\sin^2(\psi/2)},\qquad \psi = 2\pi\frac{d}{\lambda}\big(\sin\theta-\sin\theta_0\big)$$
+      <p>Cách dễ hiểu nhất là coi mỗi số hạng như một mũi tên (phasor) dài bằng biên độ của nó. Tổng các mũi tên nối đuôi nhau là tín hiệu nhận được theo hướng θ.</p>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="a-n">Số phần tử N</label><span class="val" id="a-no"></span></div><input type="range" id="a-n" min="2" max="16" step="1" value="8"></div>
+          <div><div class="field-top"><label for="a-s">Hướng lái θ₀</label><span class="val" id="a-so"></span></div><input type="range" id="a-s" min="-70" max="70" step="1" value="20"></div>
+          <div><div class="field-top"><label for="a-o">Hướng quan sát θ</label><span class="val" id="a-oo"></span></div><input type="range" id="a-o" min="-90" max="90" step="1" value="35"></div>
+          <div><div class="field-top"><label for="a-d">Khoảng cách phần tử d/λ</label><span class="val" id="a-do"></span></div><input type="range" id="a-d" min="0.25" max="1.5" step="0.05" value="0.5"></div>
+        </div>
+        <div style="margin-bottom:12px"><span style="font-size:14px;color:var(--muted);margin-right:10px">Biên độ trọng số</span><span class="pills" role="group" aria-label="Biên độ trọng số"><button data-tp="u" aria-pressed="true">Đều</button><button data-tp="h" aria-pressed="false">Hann (giảm dần ra biên)</button></span></div>
+        <div class="twin">
+          <canvas id="polar" height="300" aria-label="Đồ thị cực của độ lợi mảng"></canvas>
+          <canvas id="phasor" height="300" aria-label="Tổng các phasor theo hướng quan sát"></canvas>
+        </div>
+        <dl class="readouts">
+          <div><dt>Độ lợi cực đại</dt><dd id="a-g">–</dd></div>
+          <div><dt>Độ rộng búp 3 dB</dt><dd id="a-bw">–</dd></div>
+          <div><dt>Búp phụ lớn nhất</dt><dd id="a-sl">–</dd></div>
+          <div><dt>Độ lợi theo hướng θ</dt><dd id="a-go">–</dd></div>
+          <div><dt>Grating lobe</dt><dd id="a-gl">–</dd></div>
+        </dl>
+        <figcaption>Trái: độ lợi theo hướng, 0 dB ứng với N (cực đại của trọng số đều), vạch đỏ là hướng quan sát θ. Phải: các phasor của N phần tử theo hướng θ nối đuôi nhau, mũi tên đậm là tổng. Kéo θ về đúng θ₀ để các phasor thẳng hàng; kéo ra xa tới khi chúng khép thành vòng kín để thấy một điểm không.</figcaption>
+      </figure>
+      <p>Hình này cho thấy ba hiện tượng quan trọng:</p>
+      <ul>
+        <li><b>Điểm không.</b> Khi các phasor khép thành đa giác kín, tổng bằng 0. Điểm không đầu tiên nằm ở ψ = 2π/N, nên mảng càng dài thì búp chính càng hẹp.</li>
+        <li><b>Grating lobe.</b> Kéo d/λ lên trên 0,5 rồi lái búp lệch sang một bên: xuất hiện búp thứ hai mạnh ngang búp chính ở hướng khác. Nguyên nhân là ψ chạy quá một chu kỳ 2π, nên các phasor lại thẳng hàng lần nữa. Vì vậy các mảng thực tế gần như luôn đặt phần tử cách nhau khoảng λ/2.</li>
+        <li><b>Đánh đổi của trọng số Hann.</b> Giảm biên độ ở các phần tử biên làm búp phụ thấp hẳn xuống, đổi lại búp chính rộng hơn và mất một ít độ lợi đỉnh. Đây là kỹ thuật tapering, dùng khi cần giảm nhiễu sang hướng khác.</li>
+      </ul>
+    </section>
+
+    <section id="con-so">
+      <h2><span class="n">4</span>Những con số cần nhớ</h2>
+      <p>Với mảng tuyến tính, phần tử cách nhau λ/2 và trọng số đều:</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Đại lượng</th><th>Công thức gần đúng</th><th class="num">N = 8</th><th class="num">N = 16</th></tr></thead>
+        <tbody>
+          <tr><td>Độ lợi mảng</td><td>10·log₁₀N</td><td class="num">9,0 dB</td><td class="num">12,0 dB</td></tr>
+          <tr><td>Độ rộng búp 3 dB, búp hướng chính diện</td><td>≈ 102°/N</td><td class="num">12,7°</td><td class="num">6,3°</td></tr>
+          <tr><td>Độ rộng búp 3 dB khi lái tới 60°</td><td>≈ 102°/(N·cosθ₀)</td><td class="num">25,4°</td><td class="num">12,7°</td></tr>
+          <tr><td>Búp phụ đầu tiên</td><td>không phụ thuộc N khi N lớn</td><td class="num">−12,8 dB</td><td class="num">−13,1 dB</td></tr>
+          <tr><td>Không có grating lobe khi</td><td>d/λ &lt; 1/(1+|sinθ₀|)</td><td colspan="2" class="num">lái tới 60° cần d &lt; 0,54λ</td></tr>
+        </tbody>
+      </table></div>
+      <p>Với mảng phẳng N<sub>H</sub>×N<sub>V</sub>, độ lợi mảng là 10·log₁₀(N<sub>H</sub>N<sub>V</sub>): mảng 8×8 cho 18,1 dB, mảng 16×16 cho 24,1 dB. Cộng thêm độ lợi phần tử 8 dBi theo mẫu 3GPP, mảng 16×16 đạt khoảng 32 dBi theo hướng chính diện.</p>
+      <p>Độ rộng búp tăng khi lái lệch vì nhìn từ hướng nghiêng, mảng trông ngắn đi theo hệ số cosθ₀. Đây là lý do một panel phẳng thường chỉ lái hiệu quả trong khoảng ±60°.</p>
+    </section>
+
+    <section id="phan-tu">
+      <h2><span class="n">5</span>Phần tử anten và phép nhân búp</h2>
+      <p>Mục 3 giả định mỗi phần tử là đẳng hướng. Thực tế mỗi phần tử là một anten patch có búp riêng, chủ yếu hướng ra phía trước. Búp của cả mảng bằng búp phần tử nhân với hệ số mảng; tính theo dB thì là phép cộng:</p>
+      $$G_{\text{tổng}}(\theta)\;[\text{dBi}] = G_E(\theta) + 10\log_{10}\big|\mathbf w^{\mathsf H}\mathbf a(\theta)\big|^2$$
+      <p>3GPP TR 38.901 (Bảng 7.3-1) quy định mẫu phần tử dùng trong mô phỏng, với độ rộng búp 3 dB là 65° và độ lợi cực đại 8 dBi:</p>
+      $$A_H(\varphi) = -\min\!\Big\{12\big(\tfrac{\varphi}{65^\circ}\big)^2,\,30\Big\},\quad A_V(\theta) = -\min\!\Big\{12\big(\tfrac{\theta-90^\circ}{65^\circ}\big)^2,\,30\Big\}$$
+      $$G_E(\theta,\varphi) = 8 - \min\big\{-(A_H+A_V),\,30\big\}\;\text{dBi}$$
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="m-n">Số phần tử N</label><span class="val" id="m-no"></span></div><input type="range" id="m-n" min="1" max="16" step="1" value="8"></div>
+          <div><div class="field-top"><label for="m-s">Hướng lái θ₀</label><span class="val" id="m-so"></span></div><input type="range" id="m-s" min="-75" max="75" step="1" value="50"></div>
+        </div>
+        <canvas id="mult" height="280" aria-label="Phép nhân búp: búp phần tử, hệ số mảng và búp tổng"></canvas>
+        <div class="legend"><span><i style="background:var(--guide)"></i>Phần tử 3GPP</span><span><i style="background:var(--cobalt)"></i>Hệ số mảng</span><span><i style="background:var(--ink)"></i>Tổng</span><span><i style="background:var(--amber)"></i>Hướng lái</span></div>
+        <dl class="readouts">
+          <div><dt>Hướng cực đại thực tế</dt><dd id="m-pk">–</dd></div>
+          <div><dt>Độ lợi cực đại</dt><dd id="m-g">–</dd></div>
+          <div><dt>Suy hao do lái</dt><dd id="m-sc">–</dd></div>
+        </dl>
+        <figcaption>Lát cắt theo phương ngang của một mảng tuyến tính gồm các phần tử 3GPP. Khi lái xa chính diện, đỉnh của hệ số mảng rơi vào phần dốc của búp phần tử.</figcaption>
+      </figure>
+      <p>Phép nhân búp giải thích hai hiện tượng bạn đã thấy trên mô hình 3D:</p>
+      <ul>
+        <li><b>Suy hao do lái (scan loss):</b> ở 60°, phần tử đã mất khoảng 10 dB so với đỉnh của nó, nên búp tổng thấp hơn khi hướng chính diện.</li>
+        <li><b>Hướng cực đại lệch khỏi hướng lái:</b> búp phần tử dốc xuống về phía biên kéo đỉnh của búp tổng ngược về phía chính diện vài độ.</li>
+      </ul>
+      <p>Búp phần tử còn chặn phía sau của panel. Mảng gồm các phần tử đẳng hướng sẽ có một búp đối xứng ở phía sau, điều mà panel thật không có.</p>
+    </section>
+
+    <section id="mang-phang">
+      <h2><span class="n">6</span>Mảng phẳng</h2>
+      <p>Một mảng phẳng đều (UPA) gồm N<sub>H</sub> cột và N<sub>V</sub> hàng. Vì vị trí phần tử tách được theo hai trục, hệ số mảng cũng tách thành tích của hai mảng tuyến tính:</p>
+      $$|AF(\theta,\varphi)|^2 = \frac{1}{N_HN_V}\,\frac{\sin^2(N_H\psi_H/2)}{\sin^2(\psi_H/2)}\cdot\frac{\sin^2(N_V\psi_V/2)}{\sin^2(\psi_V/2)}$$
+      $$\psi_H = \pi\big(\sin\theta\sin\varphi-\sin\theta_0\sin\varphi_0\big),\qquad \psi_V = \pi\big(\cos\theta-\cos\theta_0\big)$$
+      <p>Ở đây θ là góc đo từ thiên đỉnh và φ là góc phương vị, theo quy ước của TR 38.901, với d = λ/2. Hệ quả trực tiếp: N<sub>H</sub> quyết định độ hẹp của búp theo phương ngang, còn N<sub>V</sub> quyết định độ hẹp theo phương dọc. Mảng 8×4 cho búp dẹt như hình quạt, mảng 4×8 cho búp dựng đứng. Hai công thức này chính là những gì trang mô hình 3D tính cho mỗi điểm trên mặt cầu.</p>
+    </section>
+
+    <section id="kien-truc">
+      <h2><span class="n">7</span>Ai tạo ra trọng số: ba kiến trúc</h2>
+      <p>Trọng số w được áp ở đâu trong phần cứng quyết định bạn có thể tạo bao nhiêu búp cùng lúc.</p>
+      <figure class="svgfig">
+        <svg viewBox="0 0 860 300" role="img" aria-labelledby="arch-t arch-d">
+          <title id="arch-t">Ba kiến trúc beamforming</title>
+          <desc id="arch-d">Analog dùng một chuỗi RF và các bộ dịch pha. Digital có một chuỗi RF cho mỗi anten. Hybrid có vài chuỗi RF, mỗi chuỗi nối tới nhiều anten qua bộ dịch pha.</desc>
+          <g id="arch"></g>
+        </svg>
+        <figcaption>BB: xử lý băng gốc. RF: chuỗi cao tần gồm DAC/ADC, bộ trộn tần và khuếch đại. Hình tròn có mũi tên: bộ dịch pha.</figcaption>
+      </figure>
+      <div class="scroll"><table>
+        <thead><tr><th>Kiến trúc</th><th>Số búp cùng lúc</th><th>Ưu điểm</th><th>Nhược điểm</th></tr></thead>
+        <tbody>
+          <tr><td>Analog</td><td>1</td><td>Rẻ, tiết kiệm điện, chỉ cần một chuỗi RF</td><td>Chỉ đổi được pha, một búp cho cả băng thông, phải quét búp theo thời gian</td></tr>
+          <tr><td>Digital</td><td>tới N</td><td>Trọng số tùy ý cho từng sóng mang con, linh hoạt nhất</td><td>Mỗi anten một chuỗi RF và ADC, rất tốn điện ở mmWave</td></tr>
+          <tr><td>Hybrid</td><td>N<sub>RF</sub></td><td>Cân bằng giữa chi phí và số luồng</td><td>Thiết kế trọng số phức tạp hơn, gồm hai tầng analog và digital</td></tr>
+        </tbody>
+      </table></div>
+      <p>Trạm 5G ở 3,5 GHz thường dùng digital (massive MIMO 32 hoặc 64 chuỗi RF). Ở mmWave phổ biến là hybrid. Khi các trang mô phỏng UAV ghi "4 búp", ý là UAV có 4 chuỗi RF và phục vụ tối đa 4 luồng đồng thời (MU-MIMO).</p>
+      <p>Với nhiều người dùng, cách chọn trọng số đơn giản nhất là chiếu búp thẳng tới từng người (MRT, giống steering vector ở mục 3). Cách tốt hơn là zero-forcing: chọn trọng số sao cho búp của người này có điểm không đúng vào hướng của những người còn lại, đổi lại mất một phần độ lợi.</p>
+    </section>
+
+    <section id="quan-ly-bup">
+      <h2><span class="n">8</span>Chọn búp trong 5G NR</h2>
+      <p>Công thức w = a(θ₀)/√N giả định trạm biết chính xác hướng θ₀ của người dùng. Thực tế trạm không biết, nên 5G NR dùng một tập búp định sẵn (codebook, thường dựa trên ma trận DFT) và quy trình quản lý búp (beam management) gồm ba bước:</p>
+      <figure class="svgfig">
+        <svg viewBox="0 0 860 250" role="img" aria-labelledby="bm-t bm-d">
+          <title id="bm-t">Ba bước quản lý búp trong 5G NR</title>
+          <desc id="bm-d">P1: trạm quét các búp rộng SSB, người dùng báo búp tốt nhất. P2: trạm tinh chỉnh bằng búp hẹp CSI-RS quanh búp đó. P3: người dùng tinh chỉnh búp thu của mình.</desc>
+          <g id="bm"></g>
+        </svg>
+      </figure>
+      <ol>
+        <li><b>P1, quét búp rộng.</b> Trạm phát lần lượt các khối tín hiệu đồng bộ (SSB) theo nhiều hướng; ở băng FR2 có tối đa 64 búp. Người dùng đo công suất (RSRP) của từng búp và báo búp tốt nhất.</li>
+        <li><b>P2, tinh chỉnh phía trạm.</b> Trạm quét vài búp hẹp hơn bằng tín hiệu CSI-RS quanh búp đã chọn.</li>
+        <li><b>P3, tinh chỉnh phía người dùng.</b> Trạm giữ cố định búp, người dùng quét búp thu của mình.</li>
+      </ol>
+      <p>Khi người dùng di chuyển hoặc bị che khuất, trạm theo dõi búp liên tục và có cơ chế khôi phục khi mất búp (beam failure recovery). Mỗi lần quét đều tốn tài nguyên vô tuyến và thời gian, nên các mô hình "lái búp lý tưởng" như trong các trang mô phỏng là cận trên lạc quan của thực tế.</p>
+    </section>
+
+    <section id="doc-beam-3d">
+      <h2><span class="n">9</span>Đọc trang mô hình búp sóng 3D</h2>
+      <p>Trang <a href="beam-3d.html">beam-3d.html</a> tính đúng các công thức ở mục 5 và 6 cho từng điểm trên một mặt cầu chia lưới 2°, rồi vẽ kết quả thành bề mặt 3D.</p>
+      <h3>Các nút điều khiển ứng với gì</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Trên trang</th><th>Trong công thức</th></tr></thead>
+        <tbody>
+          <tr><td>Phần tử đơn</td><td>Chỉ có G<sub>E</sub>(θ,φ), không có hệ số mảng</td></tr>
+          <tr><td>Mảng đẳng hướng</td><td>Chỉ có |AF|², coi mọi phần tử là đẳng hướng (G<sub>E</sub> = 0 dBi)</td></tr>
+          <tr><td>Mảng 3GPP</td><td>G<sub>E</sub> + 10·log₁₀|AF|², gần với panel thật</td></tr>
+          <tr><td>Số phần tử ngang, dọc</td><td>N<sub>H</sub>, N<sub>V</sub></td></tr>
+          <tr><td>Phương vị, góc ngẩng</td><td>Hướng lái (φ₀, 90° − θ₀); trọng số là steering vector của hướng này</td></tr>
+          <tr><td>Bán kính và màu của bề mặt</td><td>Độ lợi theo dB so với đỉnh, cắt ở −30 dB; màu cam là gần đỉnh</td></tr>
+          <tr><td>Độ lợi cực đại</td><td>Giá trị lớn nhất của G<sub>tổng</sub> trên lưới</td></tr>
+          <tr><td>Hướng cực đại</td><td>Hướng đạt giá trị lớn nhất, có thể khác hướng lái</td></tr>
+          <tr><td>Suy hao do lái</td><td>8 + 10·log₁₀(N<sub>H</sub>N<sub>V</sub>) trừ độ lợi cực đại</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Năm thí nghiệm nên làm theo thứ tự</h3>
+      <ol class="try">
+        <li>Chọn <b>Phần tử đơn</b>. Bạn thấy một búp rộng, độ lợi 8 dBi, búp 3 dB rộng 65°. Đây là "viên gạch" cơ bản.</li>
+        <li>Chọn <b>Mảng 3GPP</b>, đặt 8×1 rồi 1×8. Búp dẹt theo chiều có nhiều phần tử: đúng như tích hai mảng tuyến tính ở mục 6.</li>
+        <li>Chuyển sang <b>Mảng đẳng hướng</b>. Một búp đối xứng xuất hiện phía sau panel, vì không còn búp phần tử chặn lại.</li>
+        <li>Quay lại <b>Mảng 3GPP</b>, đặt 8×8 và kéo phương vị lên 60°. Suy hao do lái vào khoảng 10 dB, và hướng cực đại nhỏ hơn 60° vài độ, như phân tích ở mục 5.</li>
+        <li>Đặt 16×16 ở phương vị 0°. Búp rất hẹp và các búp phụ thành một lưới nhỏ quanh búp chính: đây là cấu hình của radio 26 GHz trên UAV trong các trang mô phỏng.</li>
+      </ol>
+      <h3>Những gì mô hình chưa tính</h3>
+      <ul>
+        <li>Khoảng cách phần tử cố định ở λ/2, nên không thấy grating lobe. Hãy dùng hình ở mục 3 để xem hiện tượng này.</li>
+        <li>Pha liên tục và chính xác. Bộ dịch pha thật thường chỉ có 5–6 bit, sinh thêm búp phụ do lượng tử hóa.</li>
+        <li>Một tần số duy nhất. Với băng rộng, mảng analog bị lệch búp theo tần số (beam squint).</li>
+        <li>Không có tương hỗ giữa các phần tử (mutual coupling), không xét phân cực, và giả định trường xa.</li>
+      </ul>
+      <p>
+        <a class="btn primary" href="beam-3d.html">Mở mô hình búp sóng 3D</a>
+        <button class="btn" id="load-embed">Xem ngay trong trang này</button>
+      </p>
+      <div class="embed" id="embed"></div>
+    </section>
+
+    <section id="uav">
+      <h2><span class="n">10</span>Áp dụng cho UAV-BS</h2>
+      <p>Trên UAV-BS, panel thường gắn dưới bụng, mặt chính diện hướng thẳng xuống đất. Người dùng cách UAV một khoảng ngang r khi UAV bay ở độ cao h thì nằm lệch khỏi chính diện một góc α = arctan(r/h). Mọi điều ở mục 4 và 5 áp dụng nguyên vẹn với α thay cho θ₀: trong khoảng α ≤ 60°, tức r ≤ 1,7h, búp lái tốt; xa hơn, suy hao do lái tăng nhanh.</p>
+      <p>Trang <a href="uav-beamforming.html">UAV lái búp tới người dùng</a> cho thấy điều này trên mặt đất, và trang <a href="my-dinh-uav.html">Lễ hội tại Mỹ Đình</a> dùng nó ở quy mô cả đội UAV. Ở trang Mỹ Đình, mô phỏng chạy theo bước 2 phút, nên beamforming được đưa vào dưới dạng trung bình:</p>
+      <ul>
+        <li><b>Búp phục vụ:</b> khi một ô được lập lịch, búp lái chính xác tới ô đó, nên độ lợi bằng G<sub>E</sub> + 10·log₁₀N².</li>
+        <li><b>Nhiễu từ UAV khác:</b> trung bình của |AF|² theo các hướng lái ngẫu nhiên bằng 1, nên độ lợi nhiễu kỳ vọng chỉ còn bằng G<sub>E</sub>, nhân với tải của UAV gây nhiễu.</li>
+        <li><b>Nhiều búp đồng thời:</b> thể hiện qua việc nhân dung lượng với 4 chuỗi RF và hiệu suất 0,7.</li>
+      </ul>
+      <p>Các hình nón trên trang đó là bốn hướng mà mỗi UAV dành nhiều thời gian chiếu búp nhất trong bước 2 phút, không phải búp ở từng TTI.</p>
+    </section>
+
+    <section id="doc-them">
+      <h2><span class="n">11</span>Tài liệu đọc thêm</h2>
+      <ul class="refs">
+        <li>C. A. Balanis, <i>Antenna Theory: Analysis and Design</i>, Wiley. Các chương về mảng anten tuyến tính và phẳng.</li>
+        <li>H. L. Van Trees, <i>Optimum Array Processing</i>, Wiley, 2002. Nền tảng về steering vector, tapering và grating lobe.</li>
+        <li>3GPP TR 38.901, Bảng 7.3-1 (mẫu phần tử anten) và mục 7.1 (hệ tọa độ, phép quay panel).</li>
+        <li>R. W. Heath Jr. và cộng sự, "An Overview of Signal Processing Techniques for Millimeter Wave MIMO Systems," <i>IEEE Journal of Selected Topics in Signal Processing</i>, 2016.</li>
+        <li>F. Sohrabi và W. Yu, "Hybrid Digital and Analog Beamforming Design for Large-Scale Antenna Arrays," <i>IEEE Journal of Selected Topics in Signal Processing</i>, 2016.</li>
+        <li>M. Giordani và cộng sự, "A Tutorial on Beam Management for 3GPP NR at mmWave Frequencies," <i>IEEE Communications Surveys &amp; Tutorials</i>, 2019.</li>
+      </ul>
+    </section>
+  </article>
+</div>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true}],throwOnError:false})"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const D2R = Math.PI / 180, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const nf = (v, d = 1) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? '−' : '') + Math.abs(v).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let C = {};
+const theme = () => { for (const k of ['ink', 'muted', 'line', 'cobalt', 'amber', 'danger', 'guide', 'paper', 'stage', 'wave-pos', 'wave-neg']) C[k] = cssv('--' + k); };
+theme();
+function fit(cv) { const dpr = Math.min(devicePixelRatio, 2), w = cv.clientWidth, h = cv.height / (cv._dpr || 1); cv._dpr = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.height = h + 'px'; const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return [x, w, h]; }
+const setFill = el => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%');
+const hex = s => { const m = s.replace('#', ''); return [parseInt(m.slice(0, 2), 16), parseInt(m.slice(2, 4), 16), parseInt(m.slice(4, 6), 16)]; };
+
+// ---------- figure 1: interference ----------
+const wave = $('wave'); let wPlay = !reduced, wT = 0, wImg = null, wLast = 0;
+function drawWave() {
+  const N = +$('w-n').value, dphi = +$('w-p').value * D2R;
+  $('w-no').textContent = N; $('w-po').textContent = $('w-p').value + '°'; setFill($('w-n')); setFill($('w-p'));
+  const dpr = wave._dpr || 1, W = wave.width / dpr, H = wave.height / dpr, ctx = wave.getContext('2d');
+  const lam = 26, k = 2 * Math.PI / lam, d = lam / 2, gw = Math.ceil(W / 2), gh = Math.ceil(H / 2);
+  if (!wImg || wImg.width !== gw || wImg.height !== gh) wImg = new ImageData(gw, gh);
+  const P = hex(C['wave-pos']), Nn = hex(C['wave-neg']), B = hex(C.stage), data = wImg.data;
+  const xs = Array.from({ length: N }, (_, n) => W / 2 + (n - (N - 1) / 2) * d), y0 = H - 8;
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const x = i * 2 + 1, y = j * 2 + 1; let f = 0;
+    for (let n = 0; n < N; n++) { const r = Math.hypot(x - xs[n], y - y0); f += Math.cos(k * r - wT + n * dphi) / Math.sqrt(1 + r / lam); }
+    const v = clamp(f / Math.max(Math.sqrt(N), 1) * 0.9, -1, 1), col = v >= 0 ? P : Nn, a = Math.abs(v), o = (j * gw + i) * 4;
+    data[o] = B[0] + (col[0] - B[0]) * a; data[o + 1] = B[1] + (col[1] - B[1]) * a; data[o + 2] = B[2] + (col[2] - B[2]) * a; data[o + 3] = 255;
+  }
+  const off = drawWave.off || (drawWave.off = document.createElement('canvas')); off.width = gw; off.height = gh; off.getContext('2d').putImageData(wImg, 0, 0);
+  ctx.imageSmoothingEnabled = true; ctx.clearRect(0, 0, W, H); ctx.drawImage(off, 0, 0, W, H);
+  ctx.fillStyle = C.ink; xs.forEach(x => { ctx.beginPath(); ctx.arc(x, y0, 3.5, 0, 2 * Math.PI); ctx.fill(); });
+  const s = dphi / Math.PI;
+  ctx.font = '13px "Be Vietnam Pro", system-ui, sans-serif'; ctx.textBaseline = 'top';
+  if (Math.abs(s) <= 1 && N > 1) {
+    const th = Math.asin(s), L = H - 30; ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(W / 2, y0); ctx.lineTo(W / 2 + L * Math.sin(th), y0 - L * Math.cos(th)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.ink; ctx.fillText('θ₀ = ' + nf(th / D2R, 0) + '°', 12, 10);
+  } else { ctx.fillStyle = C.ink; ctx.fillText(N > 1 ? 'Một anten: không có hướng ưu tiên' : 'Một anten: sóng tròn đều mọi hướng', 12, 10); }
+}
+$('w-play').onclick = () => { wPlay = !wPlay; $('w-play').textContent = wPlay ? 'Tạm dừng' : 'Chạy'; $('w-play').setAttribute('aria-pressed', wPlay); };
+if (!wPlay) { $('w-play').textContent = 'Chạy'; $('w-play').setAttribute('aria-pressed', 'false'); }
+['w-n', 'w-p'].forEach(id => $(id).addEventListener('input', drawWave));
+
+// ---------- figure 2: array factor, polar + phasors ----------
+let taper = 'u';
+const weights = N => Array.from({ length: N }, (_, n) => taper === 'u' ? 1 : 0.5 - 0.5 * Math.cos(2 * Math.PI * (n + 1) / (N + 1)));
+function afGain(a, dl, th, th0) { const psi = 2 * Math.PI * dl * (Math.sin(th) - Math.sin(th0)); let re = 0, im = 0; a.forEach((w, n) => { re += w * Math.cos(n * psi); im += w * Math.sin(n * psi); }); return (re * re + im * im) / a.reduce((s, w) => s + w * w, 0); }
+function drawArray() {
+  const N = +$('a-n').value, th0 = +$('a-s').value * D2R, tho = +$('a-o').value * D2R, dl = +$('a-d').value, a = weights(N);
+  $('a-no').textContent = N; $('a-so').textContent = $('a-s').value + '°'; $('a-oo').textContent = $('a-o').value + '°'; $('a-do').textContent = nf(dl, 2);
+  ['a-n', 'a-s', 'a-o', 'a-d'].forEach(id => setFill($(id)));
+  const M = 1801, g = new Float64Array(M); let pk = 0, pki = 0;
+  for (let i = 0; i < M; i++) { const th = (-90 + i * 0.1) * D2R; g[i] = afGain(a, dl, th, th0); if (g[i] > pk) { pk = g[i]; pki = i; } }
+  // main-lobe width and side lobes
+  let l = pki, r = pki; while (l > 0 && g[l] > pk / 2) l--; while (r < M - 1 && g[r] > pk / 2) r++;
+  let nl = pki, nr = pki; while (nl > 0 && g[nl - 1] <= g[nl]) nl--; while (nr < M - 1 && g[nr + 1] <= g[nr]) nr++;
+  let sl = 0, grating = false;
+  for (let i = 1; i < M - 1; i++) { if (i >= nl && i <= nr) continue; if (g[i] >= g[i - 1] && g[i] >= g[i + 1]) { sl = Math.max(sl, g[i]); if (g[i] > 0.5 * pk) grating = true; } }
+  $('a-g').textContent = nf(10 * Math.log10(pk)) + ' dB'; $('a-bw').textContent = l > 0 && r < M - 1 ? nf((r - l) * 0.1) + '°' : 'rất rộng';
+  $('a-sl').textContent = sl > 0 ? nf(10 * Math.log10(sl / pk)) + ' dB' : 'không có';
+  const go = afGain(a, dl, tho, th0); $('a-go').textContent = nf(10 * Math.log10(Math.max(go, 1e-6))) + ' dB';
+  $('a-gl').textContent = grating ? 'Có' : 'Không'; $('a-gl').classList.toggle('warn', grating);
+  // polar (upper half-plane), 0 dB = N
+  const [x, W, H] = fit($('polar')), cx = W / 2, cy = H - 18, R = Math.min(W / 2 - 22, H - 36), floor = -30;
+  x.clearRect(0, 0, W, H); x.strokeStyle = C.line; x.lineWidth = 1; x.font = '11.5px "Be Vietnam Pro", system-ui, sans-serif'; x.fillStyle = C.muted;
+  x.textAlign = 'right'; for (const db of [0, -10, -20]) { const rr = R * (db - floor) / -floor, t = -12 * D2R; x.beginPath(); x.arc(cx, cy, rr, Math.PI, 2 * Math.PI); x.stroke(); x.fillText(nf(db, 0) + ' dB', cx + rr * Math.sin(t) - 3, cy - rr * Math.cos(t) - 2); } x.textAlign = 'left';
+  for (let deg = -90; deg <= 90; deg += 30) { const t = deg * D2R; x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + R * Math.sin(t), cy - R * Math.cos(t)); x.stroke(); }
+  x.textAlign = 'center'; [-90, -60, -30, 0, 30, 60, 90].forEach(deg => { const t = deg * D2R; x.fillText(deg + '°', cx + (R + 12) * Math.sin(t), cy - (R + 12) * Math.cos(t) + 4); }); x.textAlign = 'left';
+  x.beginPath();
+  for (let i = 0; i < M; i++) { const t = (-90 + i * 0.1) * D2R, db = 10 * Math.log10(Math.max(g[i] / N, 1e-9)), rr = R * Math.max(db - floor, 0) / -floor; const px = cx + rr * Math.sin(t), py = cy - rr * Math.cos(t); i ? x.lineTo(px, py) : x.moveTo(px, py); }
+  x.strokeStyle = C.cobalt; x.lineWidth = 2; x.stroke();
+  const ob = 10 * Math.log10(Math.max(go / N, 1e-9)), orr = R * Math.max(ob - floor, 0) / -floor;
+  x.strokeStyle = C.danger; x.lineWidth = 1.5; x.setLineDash([4, 4]); x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + R * Math.sin(tho), cy - R * Math.cos(tho)); x.stroke(); x.setLineDash([]);
+  x.fillStyle = C.danger; x.beginPath(); x.arc(cx + orr * Math.sin(tho), cy - orr * Math.cos(tho), 4, 0, 2 * Math.PI); x.fill();
+  // phasors at observation angle
+  const [p, PW, PH] = fit($('phasor')), psi = 2 * Math.PI * dl * (Math.sin(tho) - Math.sin(th0)), sumA = a.reduce((s, w) => s + w, 0);
+  p.clearRect(0, 0, PW, PH);
+  let px = 0, py = 0; const pts = [[0, 0]];
+  a.forEach((w, n) => { px += w * Math.cos(n * psi); py += w * Math.sin(n * psi); pts.push([px, py]); });
+  let minx = 0, maxx = 0, miny = 0, maxy = 0; pts.forEach(([u, v]) => { minx = Math.min(minx, u); maxx = Math.max(maxx, u); miny = Math.min(miny, v); maxy = Math.max(maxy, v); });
+  const sc = Math.min(PW, PH - 40) * 0.85 / Math.max(maxx - minx, maxy - miny, sumA * 0.35);
+  const ox = PW / 2 - (minx + maxx) / 2 * sc, oy = PH / 2 + (miny + maxy) / 2 * sc, T = (u, v) => [ox + u * sc, oy - v * sc];
+  const arrow = (u0, v0, u1, v1, col, lw) => { const [a0, b0] = T(u0, v0), [a1, b1] = T(u1, v1); p.strokeStyle = col; p.fillStyle = col; p.lineWidth = lw; p.beginPath(); p.moveTo(a0, b0); p.lineTo(a1, b1); p.stroke();
+    const an = Math.atan2(b1 - b0, a1 - a0), hs = 4 + lw * 1.5; if (Math.hypot(a1 - a0, b1 - b0) > hs) { p.beginPath(); p.moveTo(a1, b1); p.lineTo(a1 - hs * Math.cos(an - 0.4), b1 - hs * Math.sin(an - 0.4)); p.lineTo(a1 - hs * Math.cos(an + 0.4), b1 - hs * Math.sin(an + 0.4)); p.fill(); } };
+  for (let n = 1; n < pts.length; n++) arrow(pts[n - 1][0], pts[n - 1][1], pts[n][0], pts[n][1], C.cobalt, 1.6);
+  arrow(0, 0, px, py, C.ink, 2.6);
+  p.fillStyle = C.muted; p.font = '12px "Be Vietnam Pro", system-ui, sans-serif'; p.textBaseline = 'top';
+  p.fillText('Độ dài tổng: ' + nf(Math.hypot(px, py) / sumA * 100, 0) + '% so với khi thẳng hàng', 8, 8);
+}
+['a-n', 'a-s', 'a-o', 'a-d'].forEach(id => $(id).addEventListener('input', drawArray));
+document.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => { taper = b.dataset.tp; document.querySelectorAll('[data-tp]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawArray(); });
+
+// ---------- figure 3: pattern multiplication ----------
+const elemH = deg => 8 - Math.min(12 * (deg / 65) ** 2, 30);
+function drawMult() {
+  const N = +$('m-n').value, th0 = +$('m-s').value * D2R; $('m-no').textContent = N; $('m-so').textContent = $('m-s').value + '°'; setFill($('m-n')); setFill($('m-s'));
+  const a = Array(N).fill(1), M = 1801, E = new Float64Array(M), A = new Float64Array(M), T = new Float64Array(M); let pk = -1e9, pki = 0;
+  for (let i = 0; i < M; i++) { const deg = -90 + i * 0.1, g = afGain(a, 0.5, deg * D2R, th0); E[i] = elemH(deg); A[i] = 10 * Math.log10(Math.max(g, 1e-6)); T[i] = E[i] + A[i]; if (T[i] > pk) { pk = T[i]; pki = i; } }
+  $('m-pk').textContent = nf(-90 + pki * 0.1) + '°'; $('m-g').textContent = nf(pk) + ' dBi'; $('m-sc').textContent = nf(8 + 10 * Math.log10(N) - pk) + ' dB';
+  const [x, W, H] = fit($('mult')), L = 40, R = 12, Tp = 10, B = 26, w = W - L - R, h = H - Tp - B, ymin = -25, ymax = 25;
+  const X = deg => L + (deg + 90) / 180 * w, Y = db => Tp + h - (clamp(db, ymin, ymax) - ymin) / (ymax - ymin) * h;
+  x.clearRect(0, 0, W, H); x.font = '11.5px "Be Vietnam Pro", system-ui, sans-serif'; x.fillStyle = C.muted; x.strokeStyle = C.line; x.lineWidth = 1;
+  x.textAlign = 'right'; x.textBaseline = 'middle';
+  for (let db = ymin + 5; db <= ymax; db += 10) { x.beginPath(); x.moveTo(L, Y(db) + 0.5); x.lineTo(L + w, Y(db) + 0.5); x.stroke(); x.fillText(db, L - 6, Y(db)); }
+  x.textAlign = 'center'; x.textBaseline = 'top'; for (let deg = -90; deg <= 90; deg += 30) x.fillText(deg + '°', X(deg), Tp + h + 6);
+  x.save(); x.translate(10, Tp + h / 2); x.rotate(-Math.PI / 2); x.textBaseline = 'top'; x.fillText('dBi', 0, 0); x.restore();
+  const line = (arr, col, lw, dash) => { x.strokeStyle = col; x.lineWidth = lw; x.setLineDash(dash || []); x.beginPath(); for (let i = 0; i < M; i += 2) { const px = X(-90 + i * 0.1), py = Y(arr[i]); i ? x.lineTo(px, py) : x.moveTo(px, py); } x.stroke(); x.setLineDash([]); };
+  line(E, C.guide, 2); line(A, C.cobalt, 1.6, [5, 4]); line(T, C.ink, 2.2);
+  x.strokeStyle = C.amber; x.lineWidth = 1.5; x.beginPath(); x.moveTo(X(th0 / D2R), Tp); x.lineTo(X(th0 / D2R), Tp + h); x.stroke();
+}
+['m-n', 'm-s'].forEach(id => $(id).addEventListener('input', drawMult));
+
+// ---------- diagrams ----------
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.appendChild(e); return e; }
+function drawArch() {
+  const g = $('arch'); g.innerHTML = '';
+  const box = (x, y, w, h, t, fill) => { el('rect', { x, y, width: w, height: h, rx: 6, fill: fill || C.paper, stroke: C.guide, 'stroke-width': 1 }, g); el('text', { x: x + w / 2, y: y + h / 2 + 4, 'text-anchor': 'middle', 'font-size': 12, fill: C.ink }, g, t); };
+  const ln = (x1, y1, x2, y2) => el('line', { x1, y1, x2, y2, stroke: C.guide, 'stroke-width': 1.2 }, g);
+  const ps = (cx, cy) => { el('circle', { cx, cy, r: 8, fill: C.paper, stroke: C.cobalt, 'stroke-width': 1.4 }, g); el('path', { d: `M${cx - 4} ${cy + 3} L${cx + 4} ${cy - 3}`, stroke: C.cobalt, 'stroke-width': 1.4 }, g); };
+  const ant = (x, y) => el('path', { d: `M${x} ${y + 8} V${y - 6} M${x - 6} ${y - 6} L${x} ${y} L${x + 6} ${y - 6}`, stroke: C.ink, 'stroke-width': 1.4, fill: 'none' }, g);
+  const cols = [[20, 'Analog: 1 búp'], [310, 'Digital: tới N búp'], [600, 'Hybrid: N_RF búp']];
+  cols.forEach(([x0, t]) => { const tx = el('text', { x: x0 + 120, y: 22, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 600, fill: C.ink }, g, t.replace('N_RF', 'N'));
+    if (t.includes('N_RF')) { const parts = t.split('N_RF'); tx.textContent = parts[0] + 'N'; el('tspan', { 'baseline-shift': 'sub', 'font-size': 10 }, tx, 'RF'); el('tspan', {}, tx, parts[1]); } });
+  const ys = [80, 130, 180, 230];
+  // analog
+  box(20, 135, 50, 40, 'BB'); box(90, 135, 50, 40, 'RF'); ln(70, 155, 90, 155);
+  ys.forEach(y => { ln(140, 155, 185, y); ps(195, y); ln(203, y, 235, y); ant(245, y); });
+  // digital
+  box(310, 135, 50, 40, 'BB');
+  ys.forEach(y => { ln(360, 155, 385, y); box(385, y - 14, 50, 28, 'RF'); ln(435, y, 525, y); ant(535, y); });
+  // hybrid
+  box(600, 135, 50, 40, 'BB'); [105, 205].forEach((yr, k) => { box(670, yr - 14, 50, 28, 'RF'); ln(650, 155, 670, yr);
+    ys.forEach(y => { ln(720, yr, 765, y); }); });
+  ys.forEach(y => { ps(775, y); ln(783, y, 815, y); ant(825, y); });
+  el('text', { x: 720, y: 285, 'text-anchor': 'middle', 'font-size': 12, fill: C.muted }, g, 'mỗi chuỗi RF nối tới mọi anten qua bộ dịch pha');
+}
+function drawBM() {
+  const g = $('bm'); g.innerHTML = '';
+  const fan = (cx, cy, n, spread, width, hi, label, sub, flip) => {
+    for (let i = 0; i < n; i++) { const a = (-spread / 2 + spread * (i + 0.5) / n) * D2R, w = width * D2R, Lr = 120, s = flip ? 1 : -1;
+      const p1 = [cx + Lr * Math.sin(a - w / 2), cy + s * Lr * Math.cos(a - w / 2)], p2 = [cx + Lr * Math.sin(a + w / 2), cy + s * Lr * Math.cos(a + w / 2)];
+      el('path', { d: `M${cx} ${cy} L${p1[0]} ${p1[1]} A${Lr} ${Lr} 0 0 ${flip ? 0 : 1} ${p2[0]} ${p2[1]} Z`, fill: i === hi ? C.amber : C.cobalt, 'fill-opacity': i === hi ? 0.75 : 0.18, stroke: 'none' }, g); }
+    el('text', { x: cx, y: 228, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 600, fill: C.ink }, g, label);
+    el('text', { x: cx, y: 246, 'text-anchor': 'middle', 'font-size': 12, fill: C.muted }, g, sub);
+  };
+  fan(140, 190, 8, 120, 15, 5, 'P1', 'trạm quét búp rộng SSB');
+  fan(430, 190, 4, 30, 7.5, 2, 'P2', 'trạm tinh chỉnh bằng CSI-RS');
+  el('rect', { x: 395, y: 190, width: 70, height: 8, rx: 2, fill: C.guide }, g);
+  el('rect', { x: 105, y: 190, width: 70, height: 8, rx: 2, fill: C.guide }, g);
+  fan(720, 70, 5, 100, 20, 1, 'P3', 'người dùng quét búp thu', true);
+  el('circle', { cx: 720, cy: 64, r: 7, fill: C.ink }, g);
+}
+
+// ---------- embed ----------
+$('load-embed').onclick = () => { $('embed').innerHTML = '<iframe src="beam-3d.html" title="Mô hình búp sóng 3D" loading="lazy"></iframe>'; $('load-embed').remove(); };
+
+// ---------- table of contents highlight ----------
+const links = [...document.querySelectorAll('nav.toc a')];
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)); }), { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('article section').forEach(s => io.observe(s));
+
+function redrawAll() { fit(wave); drawWave(); drawArray(); drawMult(); drawArch(); drawBM(); }
+new ResizeObserver(() => redrawAll()).observe(document.querySelector('article'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); redrawAll(); });
+redrawAll();
+(function loop(now) { if (wPlay && now - wLast > 40) { wLast = now; wT += 0.35; drawWave(); } requestAnimationFrame(loop); })(0);
+})();
+</script>
+</body>
+</html>
