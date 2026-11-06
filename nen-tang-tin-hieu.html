@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nền tảng tín hiệu và hệ thống</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<style>
+:root{
+  --paper:#F2F4F6; --stage:#E6EAEE; --line:#D3D9DF; --ink:#15202B; --muted:#5B6773;
+  --cobalt:#2747D6; --cobalt-soft:#DCE3FB; --amber:#D9900B; --danger:#C8372D; --guide:#8B96A1; --body:#3B4652;
+  --wave-pos:#D9900B; --wave-neg:#2747D6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1720; --stage:#131E29; --line:#243241; --ink:#E6EDF3; --muted:#8C9AA8;
+    --cobalt:#7F97FF; --cobalt-soft:#1E2A52; --amber:#F2B13A; --danger:#FF6B5E; --guide:#5E6B78; --body:#C9D3DD;
+    --wave-pos:#F2B13A; --wave-neg:#7F97FF;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16.5px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--cobalt)}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+.top{border-bottom:1px solid var(--line);padding:12px 24px;display:flex;gap:18px;flex-wrap:wrap;font-size:14px;align-items:center}
+.top b{font-weight:600;margin-right:auto}
+.top a{text-decoration:none}
+.top a:hover{text-decoration:underline}
+.wrap{display:grid;grid-template-columns:230px minmax(0,1fr);gap:48px;max-width:1180px;margin:0 auto;padding:40px 24px 80px}
+nav.toc{position:sticky;top:24px;align-self:start;font-size:14px;line-height:1.5}
+nav.toc p{margin:0 0 10px;font-weight:600}
+nav.toc ol{list-style:none;margin:0;padding:0;counter-reset:toc}
+nav.toc li{counter-increment:toc;margin:0 0 8px}
+nav.toc a{color:var(--muted);text-decoration:none;display:flex;gap:8px}
+nav.toc a::before{content:counter(toc);font-variant-numeric:tabular-nums;color:var(--guide);min-width:1.2em}
+nav.toc a:hover,nav.toc a.on{color:var(--cobalt)}
+article{max-width:740px}
+header.hero h1{font-size:34px;line-height:1.2;font-weight:600;letter-spacing:-0.02em;margin:0 0 14px}
+header.hero p{font-size:18px;color:var(--muted);margin:0 0 8px}
+section{margin-top:56px;scroll-margin-top:20px}
+h2{font-size:24px;line-height:1.3;font-weight:600;letter-spacing:-0.01em;margin:0 0 14px;display:flex;gap:12px;align-items:baseline}
+h2 .n{color:var(--cobalt);font-variant-numeric:tabular-nums;font-weight:500}
+h3{font-size:18px;font-weight:600;margin:28px 0 8px}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin-bottom:6px}
+.katex-display{margin:18px 0;overflow-x:auto;overflow-y:hidden;padding:4px 0}
+.callout{border-left:3px solid var(--cobalt);padding:4px 0 4px 16px;margin:18px 0;color:var(--ink)}
+.callout p:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;font-size:15px;margin:10px 0 18px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;font-size:14px;color:var(--muted)}
+td.num,th.num{text-align:right}
+.scroll{overflow-x:auto}
+figure{margin:24px 0 28px;background:var(--stage);border-radius:14px;padding:18px 18px 14px;width:min(900px,calc(100vw - 340px))}
+figure canvas{display:block;width:100%;touch-action:none}
+figcaption{font-size:14px;color:var(--muted);margin-top:10px;line-height:1.55}
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 22px;margin-bottom:14px}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:4px}
+.val{font-weight:500;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--cobalt) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cobalt)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+.btn{font:inherit;font-size:14px;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn:hover{border-color:var(--guide)}
+.btn.primary{background:var(--cobalt);border-color:var(--cobalt);color:var(--paper)}
+.pills{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--paper)}
+.pills button{font:inherit;font-size:13.5px;border:0;background:transparent;color:var(--muted);padding:6px 12px;cursor:pointer}
+.pills button+button{border-left:1px solid var(--line)}
+.pills button[aria-pressed="true"]{background:var(--cobalt-soft);color:var(--cobalt);font-weight:500}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:12px}
+.readouts div{background:var(--paper);padding:8px 12px}
+.readouts dt{font-size:12.5px;color:var(--muted)}
+.readouts dd{margin:0;font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.readouts dd.warn{color:var(--danger)}
+.twin{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:6px 0 0}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:4px}
+.svgfig svg{width:100%;height:auto;display:block}
+.svgfig text{font-family:inherit}
+.embed{margin-top:14px}
+.embed iframe{width:100%;height:620px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.try li{margin-bottom:10px}
+.refs li{font-size:15px}
+.sinrbar{position:relative;margin:6px 0 4px;padding-bottom:22px}
+.sinrbar .row{display:flex;gap:2px;font-size:12px;text-align:center;margin-bottom:3px}
+.sinrbar .row span{padding:5px 2px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sinrbar .q span:nth-child(1){background:color-mix(in srgb,var(--danger) 22%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(2){background:color-mix(in srgb,var(--amber) 22%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(3){background:color-mix(in srgb,var(--cobalt) 18%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(4){background:color-mix(in srgb,var(--cobalt) 36%,var(--paper));color:var(--ink)}
+.sinrbar .m span{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+.sinrbar .m span.off{background:transparent;border-style:dashed}
+.sinrbar .marker{position:absolute;top:-4px;bottom:18px;width:2px;background:var(--ink);border-radius:1px;transition:left .08s}
+.sinrbar .ticks{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+@media (max-width:1000px){ .wrap{grid-template-columns:minmax(0,1fr);gap:0;padding-top:24px} nav.toc{display:none} figure{width:100%} }
+@media (max-width:640px){ body{font-size:16px} .wrap{padding:20px 16px 60px} header.hero h1{font-size:27px} .twin{grid-template-columns:1fr} figure{padding:14px 12px 12px;border-radius:12px} .embed iframe{height:560px} .top{padding:10px 16px} }
+.concept{margin:6px 0 18px;display:grid;grid-template-columns:118px minmax(0,1fr);gap:6px 14px;font-size:15.5px}
+.concept dt{color:var(--muted);font-size:14px;padding-top:1px}
+.concept dd{margin:0}
+.formula{background:var(--stage);border-radius:10px;padding:2px 16px;margin:14px 0 10px}
+.path{counter-reset:p;list-style:none;padding:0}
+.path li{counter-increment:p;display:grid;grid-template-columns:28px 1fr;gap:6px;margin-bottom:8px}
+.path li::before{content:counter(p);color:var(--cobalt);font-weight:600;font-variant-numeric:tabular-nums}
+@media (max-width:640px){ .concept{grid-template-columns:1fr;gap:2px} .concept dt{margin-top:6px} }
+</style>
+</head>
+<body>
+<div class="top">
+  <b>Beamforming cho UAV-BS</b>
+  <a href="nen-tang-tin-hieu.html" aria-current="page">Nền tảng tín hiệu</a>
+  <a href="beamforming-bai-giang.html">Bài giảng beamforming</a>
+  <a href="beam-3d.html">Mô hình búp sóng 3D</a>
+  <a href="uav-beamforming.html">UAV lái búp</a>
+  <a href="my-dinh-uav.html">Lễ hội tại Mỹ Đình</a>
+</div>
+<div class="wrap">
+  <nav class="toc" aria-label="Mục lục">
+    <p>Nội dung</p>
+    <ol>
+      <li><a href="#so-phuc">Số phức và phasor</a></li>
+      <li><a href="#song-sin">Sóng sin, bước sóng, pha</a></li>
+      <li><a href="#bang-goc">Tín hiệu băng gốc phức</a></li>
+      <li><a href="#cong-suat">Công suất và dB</a></li>
+      <li><a href="#cong-dong-pha">Cộng đồng pha và cộng ngẫu nhiên</a></li>
+      <li><a href="#lti">Hệ thống tuyến tính và kênh đa đường</a></li>
+      <li><a href="#fourier">Biến đổi Fourier và DFT</a></li>
+      <li><a href="#nhieu">Nhiễu nhiệt</a></li>
+      <li><a href="#lan-truyen">Suy hao lan truyền</a></li>
+      <li><a href="#shannon">SNR, SINR và Shannon</a></li>
+      <li><a href="#dieu-che">Điều chế số</a></li>
+      <li><a href="#ofdm">OFDM và lưới tài nguyên</a></li>
+      <li><a href="#ngau-nhien">Kênh ngẫu nhiên</a></li>
+      <li><a href="#vector">Vector và ma trận</a></li>
+      <li><a href="#doc-them">Sách nền tảng</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <header class="hero">
+      <h1>Nền tảng tín hiệu và hệ thống cho beamforming</h1>
+      <p>Những công thức gốc mà bài giảng beamforming dựa vào, sắp theo thứ tự nên học. Mỗi công thức có ý nghĩa, một ví dụ số và chỗ nó xuất hiện trong bài beamforming.</p>
+    </header>
+
+    <section id="lo-trinh" style="margin-top:28px">
+      <h3 style="margin-top:0">Lộ trình gợi ý</h3>
+      <ol class="path">
+        <li><span>Mục 1–3: số phức, sóng sin, băng gốc. Đây là ngôn ngữ của mọi thứ phía sau; nắm chắc thì mục 3 của bài giảng beamforming sẽ dễ.</span></li>
+        <li><span>Mục 4–5: dB và hai kiểu cộng tín hiệu. Đây là nguồn gốc của "độ lợi mảng bằng N".</span></li>
+        <li><span>Mục 6–7: hệ thống tuyến tính và Fourier. Hệ số mảng chính là một biến đổi Fourier theo không gian.</span></li>
+        <li><span>Mục 8–12: nhiễu, suy hao, Shannon, điều chế, OFDM. Đây là chuỗi đi từ công suất phát tới tốc độ, dùng trong mọi trang mô phỏng.</span></li>
+        <li><span>Mục 13–14: xác suất và đại số tuyến tính, cần cho phần nhiều người dùng và zero-forcing.</span></li>
+      </ol>
+    </section>
+
+    <section id="so-phuc">
+      <h2><span class="n">1</span>Số phức và phasor</h2>
+      <div class="formula">$$z = a + jb = r\,e^{j\varphi},\qquad r=|z|=\sqrt{a^2+b^2},\quad \varphi=\arg z$$
+      $$e^{j\varphi} = \cos\varphi + j\sin\varphi \qquad\text{(công thức Euler)}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Một số phức là một mũi tên trên mặt phẳng: dài r, quay một góc φ. Trong viễn thông, r là biên độ và φ là pha của sóng. Kỹ thuật dùng chữ j thay cho i vì i đã dành cho dòng điện.</dd>
+        <dt>Ba phép cần nhớ</dt><dd>Nhân hai số phức: nhân độ dài, cộng góc, $r_1e^{j\varphi_1}\cdot r_2e^{j\varphi_2}=r_1r_2e^{j(\varphi_1+\varphi_2)}$. Liên hợp: đảo dấu góc, $z^*=re^{-j\varphi}$. Bình phương độ dài: $|z|^2 = z\,z^*$.</dd>
+        <dt>Ví dụ</dt><dd>Nhân một tín hiệu với $e^{j\pi/2}=j$ là quay nó 90° mà không đổi biên độ. Bộ dịch pha trong mảng anten làm đúng việc này.</dd>
+        <dt>Dùng ở</dt><dd>Mọi trọng số beamforming $w_n$ là số phức: độ dài là biên độ, góc là pha áp lên phần tử thứ n.</dd>
+      </dl>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="p-a">Biên độ A</label><span class="val" id="p-ao"></span></div><input type="range" id="p-a" min="0.2" max="1" step="0.05" value="0.8"></div>
+          <div><div class="field-top"><label for="p-p">Pha φ</label><span class="val" id="p-po"></span></div><input type="range" id="p-p" min="-180" max="180" step="5" value="45"></div>
+          <div style="display:flex;align-items:end"><button class="btn" id="p-play">Tạm dừng</button></div>
+        </div>
+        <canvas id="phasorwave" height="260" aria-label="Mũi tên quay và sóng cosin tương ứng"></canvas>
+        <figcaption>Mũi tên $A e^{j(2\pi f t+\varphi)}$ quay đều ngược chiều kim đồng hồ. Độ cao của đầu mũi tên (phần ảo) vẽ theo thời gian cho sóng $A\sin(2\pi f t+\varphi)$; hình chiếu lên trục ngang (phần thực) là $A\cos(2\pi f t+\varphi)$, cùng sóng đó nhưng lệch 90°. Đổi φ làm cả sóng dịch đi; đổi A làm sóng cao hay thấp.</figcaption>
+      </figure>
+    </section>
+
+    <section id="song-sin">
+      <h2><span class="n">2</span>Sóng sin, bước sóng và pha theo khoảng cách</h2>
+      <div class="formula">$$x(t) = A\cos(2\pi f t + \varphi) = \operatorname{Re}\{A e^{j\varphi}\,e^{j2\pi f t}\}$$
+      $$\lambda = \frac{c}{f},\qquad k = \frac{2\pi}{\lambda},\qquad \text{sóng tại khoảng cách } r:\; e^{\,j(2\pi f t - k r)}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Tần số f là số vòng quay mỗi giây; bước sóng λ là quãng đường sóng đi trong một chu kỳ. Đi thêm một đoạn r, pha bị trễ thêm k·r radian: mỗi bước sóng là một vòng 2π.</dd>
+        <dt>Ví dụ</dt><dd>Với c = 3·10⁸ m/s: 2 GHz cho λ = 15 cm, 3,5 GHz cho λ ≈ 8,6 cm, 26 GHz cho λ ≈ 1,15 cm. Hai đường đi chênh nhau λ/2 thì lệch pha 180°: đỉnh gặp đáy và triệt tiêu.</dd>
+        <dt>Dùng ở</dt><dd>Phần tử thứ n của mảng nhận sóng đi thêm n·d·sinθ, nên lệch pha k·n·d·sinθ. Đây là vector lái ở mục 3 của bài giảng beamforming.</dd>
+      </dl>
+    </section>
+
+    <section id="bang-goc">
+      <h2><span class="n">3</span>Tín hiệu băng gốc phức</h2>
+      <div class="formula">$$x(t) = \operatorname{Re}\{\,s(t)\,e^{j2\pi f_c t}\},\qquad s(t) = I(t) + jQ(t)$$
+      $$x(t-\tau) \;\Longleftrightarrow\; s(t-\tau)\,e^{-j2\pi f_c\tau} \;\approx\; s(t)\,e^{-j2\pi f_c\tau}\quad\text{khi } \tau \ll 1/B$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Tín hiệu vô tuyến thật là sóng mang tần số cao f<sub>c</sub> được "chở" bởi một tín hiệu chậm s(t), có băng thông B. Ta tách phần chậm ra và chỉ làm việc với nó: s(t) là một số phức, phần thực I và phần ảo Q.</dd>
+        <dt>Điểm then chốt</dt><dd>Làm trễ tín hiệu một lượng nhỏ τ chỉ tương đương nhân băng gốc với $e^{-j2\pi f_c\tau}$, tức quay pha. Đây là lý do beamforming chỉ cần bộ dịch pha thay vì bộ trễ thời gian.</dd>
+        <dt>Ví dụ</dt><dd>Ở 26 GHz, trễ 19 ps (quãng đường λ/2) quay pha 180°. Với băng thông 800 MHz, một ký hiệu kéo dài khoảng 1,25 ns, nên trễ 19 ps không làm "nhòe" tín hiệu: chỉ có pha thay đổi.</dd>
+        <dt>Dùng ở</dt><dd>Mục 1 của phần toán beamforming (giả thiết băng hẹp) và hiện tượng lệch búp theo tần số khi băng thông quá rộng.</dd>
+      </dl>
+    </section>
+
+    <section id="cong-suat">
+      <h2><span class="n">4</span>Công suất, năng lượng và dB</h2>
+      <div class="formula">$$P = \mathbb E\big[|s(t)|^2\big],\qquad P_{\text{dB}} = 10\log_{10}\frac{P}{P_{\text{ref}}},\qquad A_{\text{dB}} = 20\log_{10}\frac{A}{A_{\text{ref}}}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Công suất tỉ lệ với bình phương biên độ, nên với biên độ dùng 20·log, với công suất dùng 10·log. dBm lấy mốc 1 mW; dBi lấy mốc anten đẳng hướng.</dd>
+        <dt>Quy tắc</dt><dd>Nhân trong tuyến tính là cộng trong dB. Nhưng <b>cộng hai công suất thì không được cộng dB</b>: 30 dBm + 30 dBm là 33 dBm, không phải 60 dBm.</dd>
+        <dt>Ví dụ</dt><dd>Biên độ gấp đôi là +6 dB công suất; công suất gấp đôi là +3 dB. Hai nguồn nhiễu −90 dBm cộng lại thành −87 dBm.</dd>
+        <dt>Dùng ở</dt><dd>Mọi ngân sách đường truyền và mục 10 của bài giảng beamforming.</dd>
+      </dl>
+    </section>
+
+    <section id="cong-dong-pha">
+      <h2><span class="n">5</span>Cộng đồng pha và cộng ngẫu nhiên</h2>
+      <div class="formula">$$\Big|\sum_{n=1}^{N} e^{j\varphi_n}\Big|^2 = \sum_{n=1}^{N}\sum_{m=1}^{N} e^{j(\varphi_n-\varphi_m)} =
+      \begin{cases} N^2 & \text{nếu mọi } \varphi_n \text{ bằng nhau}\\[2pt] N \text{ (trung bình)} & \text{nếu các } \varphi_n \text{ ngẫu nhiên, độc lập} \end{cases}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Khi N tín hiệu cùng pha, biên độ cộng thẳng nên công suất tăng N². Khi pha ngẫu nhiên, các số hạng chéo có trung bình bằng 0 nên chỉ còn N số hạng trên đường chéo: công suất tăng N.</dd>
+        <dt>Hệ quả</dt><dd>Tín hiệu được beamforming căn pha nên tăng N²; tạp âm ở các anten độc lập nên chỉ tăng N. Tỉ số là N: đó là <b>độ lợi mảng</b>. Cũng vì thế, búp của UAV khác lái tới hướng ngẫu nhiên thì trung bình không khuếch đại nhiễu.</dd>
+        <dt>Dùng ở</dt><dd>Mục 3 và mục 8 của phần toán beamforming.</dd>
+      </dl>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="c-n">Số tín hiệu N</label><span class="val" id="c-no"></span></div><input type="range" id="c-n" min="1" max="32" step="1" value="8"></div>
+          <div><div class="field-top"><span>Pha của các tín hiệu</span></div><span class="pills" role="group" aria-label="Pha"><button data-cm="co" aria-pressed="true">Cùng pha</button><button data-cm="rd" aria-pressed="false">Ngẫu nhiên</button></span></div>
+          <div style="display:flex;align-items:end"><button class="btn" id="c-seed">Gieo lại pha ngẫu nhiên</button></div>
+        </div>
+        <div class="twin">
+          <canvas id="cohchain" height="280" aria-label="Chuỗi phasor cộng nối đuôi"></canvas>
+          <canvas id="cohplot" height="280" aria-label="Công suất tổng theo N"></canvas>
+        </div>
+        <dl class="readouts">
+          <div><dt>Công suất tổng</dt><dd id="c-p">–</dd></div>
+          <div><dt>So với một tín hiệu</dt><dd id="c-db">–</dd></div>
+          <div><dt>Lý thuyết</dt><dd id="c-th">–</dd></div>
+        </dl>
+        <figcaption>Phải: đường đậm là N² (cùng pha), đường nét đứt là N (trung bình khi pha ngẫu nhiên), chấm tròn là lần gieo hiện tại. Gieo lại vài lần để thấy công suất ngẫu nhiên dao động quanh N.</figcaption>
+      </figure>
+    </section>
+
+    <section id="lti">
+      <h2><span class="n">6</span>Hệ thống tuyến tính và kênh đa đường</h2>
+      <div class="formula">$$y(t) = (h * x)(t) = \int h(\tau)\,x(t-\tau)\,d\tau \;\Longleftrightarrow\; Y(f) = H(f)\,X(f)$$
+      $$h(t) = \sum_{\ell} \alpha_\ell\,\delta(t-\tau_\ell)\;\Longrightarrow\; H(f) = \sum_\ell \alpha_\ell\,e^{-j2\pi f\tau_\ell}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Kênh vô tuyến là một hệ thống tuyến tính bất biến (trong khoảng thời gian ngắn): đầu ra là tích chập của đầu vào với đáp ứng xung h(t). Trong miền tần số, tích chập thành phép nhân.</dd>
+        <dt>Đa đường</dt><dd>Sóng tới theo nhiều đường, mỗi đường trễ τ<sub>ℓ</sub>. Ở mỗi tần số các đường cộng với pha khác nhau, nên |H(f)| lúc cao lúc thấp: đó là fading chọn lọc tần số. Khoảng cách giữa hai lần trũng là 1/Δτ.</dd>
+        <dt>Ví dụ</dt><dd>Hai đường lệch nhau 100 ns cho các điểm trũng cách nhau 10 MHz. Trong 100 MHz sẽ có khoảng 10 điểm trũng.</dd>
+        <dt>Dùng ở</dt><dd>Lý do 5G dùng OFDM (mục 12), và lý do khi có đa đường thì trọng số tối ưu là w ∝ h chứ không còn là một vector lái đơn lẻ.</dd>
+      </dl>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="m-a">Biên độ đường phản xạ α</label><span class="val" id="m-ao"></span></div><input type="range" id="m-a" min="0" max="1" step="0.05" value="0.7"></div>
+          <div><div class="field-top"><label for="m-t">Chênh lệch trễ Δτ</label><span class="val" id="m-to"></span></div><input type="range" id="m-t" min="0" max="300" step="5" value="100"></div>
+        </div>
+        <canvas id="multipath" height="220" aria-label="Đáp ứng tần số của kênh hai đường"></canvas>
+        <figcaption>Kênh hai đường $H(f) = 1 + \alpha e^{-j2\pi f\Delta\tau}$ trên băng 100 MHz. α = 0 là kênh chỉ có đường thẳng (LoS), phẳng theo tần số. α gần 1 cho các điểm trũng rất sâu.</figcaption>
+      </figure>
+    </section>
+
+    <section id="fourier">
+      <h2><span class="n">7</span>Biến đổi Fourier và DFT</h2>
+      <div class="formula">$$X(f) = \int_{-\infty}^{\infty} x(t)\,e^{-j2\pi f t}\,dt,\qquad X[k] = \sum_{n=0}^{N-1} x[n]\,e^{-j2\pi kn/N}$$
+      $$\text{xung chữ nhật dài } T \;\Longleftrightarrow\; T\,\frac{\sin(\pi f T)}{\pi f T}\qquad\text{(hàm sinc)}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Fourier tách một tín hiệu thành tổng các sóng sin. DFT là phiên bản cho N mẫu rời rạc. Tín hiệu càng ngắn thì phổ càng rộng, và ngược lại.</dd>
+        <dt>Định lý lấy mẫu</dt><dd>Tín hiệu băng gốc phức có băng thông B cần lấy mẫu với tốc độ ít nhất B mẫu phức mỗi giây (tín hiệu thực cần 2B).</dd>
+        <dt>Liên hệ không gian</dt><dd>Thay thời gian bằng vị trí phần tử, thay tần số bằng hướng u = sinθ: hệ số mảng $\sum_n w_n^* e^{jn\pi u}$ có đúng dạng DFT. Mảng N phần tử có búp dạng sinc rời rạc giống phổ của xung chữ nhật N mẫu, và tapering chính là chọn cửa sổ.</dd>
+        <dt>Dùng ở</dt><dd>Mục 4–5 của phần toán beamforming và codebook DFT trong 5G NR.</dd>
+      </dl>
+      <div class="scroll"><table>
+        <thead><tr><th>Miền thời gian, tần số</th><th>Miền không gian, hướng</th></tr></thead>
+        <tbody>
+          <tr><td>Mẫu thứ n tại thời điểm n·T<sub>s</sub></td><td>Phần tử thứ n tại vị trí n·d</td></tr>
+          <tr><td>Tần số f</td><td>Hướng, qua u = sinθ</td></tr>
+          <tr><td>Phổ X(f)</td><td>Búp sóng G(θ)</td></tr>
+          <tr><td>Quan sát lâu hơn cho phổ nét hơn</td><td>Mảng dài hơn cho búp hẹp hơn</td></tr>
+          <tr><td>Chồng phổ khi lấy mẫu thưa</td><td>Grating lobe khi d &gt; λ/2</td></tr>
+          <tr><td>Cửa sổ Hann giảm rò phổ</td><td>Tapering giảm búp phụ</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="nhieu">
+      <h2><span class="n">8</span>Nhiễu nhiệt</h2>
+      <div class="formula">$$N = k_B T B\cdot F,\qquad N_{\text{dBm}} = -174 + 10\log_{10}B_{[\text{Hz}]} + NF_{\text{dB}}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Điện tử trong mạch thu luôn dao động nhiệt, tạo ra tạp âm có mật độ k<sub>B</sub>T ≈ 4·10⁻²¹ W/Hz ở 290 K, tức −174 dBm/Hz. Băng thông càng rộng thì gom càng nhiều tạp âm. Hệ số tạp âm NF là phần máy thu làm tệ thêm.</dd>
+        <dt>Ví dụ</dt><dd>100 MHz: −174 + 80 = −94 dBm, cộng NF 7 dB thành −87 dBm. 800 MHz: −85 dBm, cộng NF 9 dB thành −76 dBm. Băng rộng gấp 8 lần thì tạp âm cao hơn 9 dB.</dd>
+        <dt>Dùng ở</dt><dd>Hằng số N₀ = 4·10⁻²¹ W/Hz trong bài báo của bạn chính là k<sub>B</sub>T. Các trang mô phỏng dùng đúng các con số ví dụ ở trên.</dd>
+      </dl>
+    </section>
+
+    <section id="lan-truyen">
+      <h2><span class="n">9</span>Suy hao lan truyền và ngân sách đường truyền</h2>
+      <div class="formula">$$P_r = P_t\,G_t\,G_r\Big(\frac{\lambda}{4\pi d}\Big)^2\qquad\text{(công thức Friis)}$$
+      $$\text{FSPL}_{\text{dB}} = 20\log_{10}\frac{4\pi d f}{c} = 20\log_{10}d + 20\log_{10}f - 147{,}55$$
+      $$P_{r,\text{dBm}} = P_{t,\text{dBm}} + G_{t,\text{dBi}} + G_{r,\text{dBi}} - \text{PL}_{\text{dB}}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Công suất loang ra trên mặt cầu ngày càng lớn nên giảm theo d². Suy hao tăng theo f² không phải vì không khí hấp thụ nhiều hơn, mà vì anten thu có cùng độ lợi ở tần số cao thì nhỏ hơn và hứng được ít năng lượng hơn.</dd>
+        <dt>Ví dụ</dt><dd>Ở 100 m: 83 dB tại 3,5 GHz, 101 dB tại 26 GHz. Gấp đôi khoảng cách thêm 6 dB. Mô hình Al-Hourani trong bài báo của bạn cộng thêm phần suy hao dư η theo xác suất có đường nhìn thẳng (LoS).</dd>
+        <dt>Dùng ở</dt><dd>Mọi phép tính SNR trong các trang mô phỏng; độ lợi anten G<sub>t</sub> chính là phần beamforming đóng góp.</dd>
+      </dl>
+    </section>
+
+    <section id="shannon">
+      <h2><span class="n">10</span>SNR, SINR và dung lượng Shannon</h2>
+      <div class="formula">$$\text{SNR} = \frac{P_r}{N},\qquad \text{SINR} = \frac{P_r}{\sum_i I_i + N},\qquad C = B\log_2(1+\text{SINR})\;\;\text{bit/s}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Shannon cho tốc độ tối đa không lỗi trên một kênh có nhiễu Gauss. log₂(1 + SINR) là hiệu suất phổ tính bằng bit/s/Hz. Hệ thống thật đạt khoảng 60–80% giới hạn này.</dd>
+        <dt>Hai chế độ</dt><dd>SINR cao: tăng 3 dB thêm khoảng 1 bit/s/Hz, nên tăng công suất ít hiệu quả. SINR thấp: C ≈ B·SINR·1,44, tốc độ tỉ lệ thuận với công suất.</dd>
+        <dt>Ví dụ</dt><dd>SINR 20 dB (gấp 100 lần): log₂(101) ≈ 6,7 bit/s/Hz; với 100 MHz là 670 Mbps cho một luồng theo lý thuyết.</dd>
+        <dt>Dùng ở</dt><dd>Công thức tính dung lượng trong bài báo của bạn và hệ số 0,75 trong các trang mô phỏng.</dd>
+      </dl>
+    </section>
+
+    <section id="dieu-che">
+      <h2><span class="n">11</span>Điều chế số</h2>
+      <div class="formula">$$\text{số bit mỗi ký hiệu} = \log_2 M,\qquad \text{SNR} = \frac{E_b}{N_0}\cdot\frac{R_b}{B}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Mỗi ký hiệu băng gốc là một điểm trên mặt phẳng I/Q, chọn trong M điểm định sẵn. QPSK có 4 điểm (2 bit), 16QAM 16 điểm (4 bit), 64QAM 6 bit, 256QAM 8 bit. Nhiều điểm hơn thì các điểm sát nhau hơn, nên cần SINR cao hơn để không đoán nhầm.</dd>
+        <dt>Quy tắc</dt><dd>Mỗi khi gấp đôi số bit trên mỗi chiều I hoặc Q, cần thêm khoảng 6 dB SINR để giữ cùng tỉ lệ lỗi. Mã sửa lỗi với tỉ lệ mã r thêm phần dư để chống lỗi; hiệu suất phổ ≈ r·log₂M.</dd>
+        <dt>Ví dụ</dt><dd>64QAM với tỉ lệ mã 948/1024 cho 6 × 0,926 ≈ 5,55 bit/s/Hz: đúng giá trị CQI 15 trong bảng của 3GPP.</dd>
+        <dt>Dùng ở</dt><dd>Mục 10 của bài giảng beamforming, bảng đổi SINR ra tốc độ.</dd>
+      </dl>
+    </section>
+
+    <section id="ofdm">
+      <h2><span class="n">12</span>OFDM và lưới tài nguyên 5G</h2>
+      <div class="formula">$$\Delta f = 15\cdot 2^{\mu}\ \text{kHz},\qquad T_{\text{ký hiệu}} = \frac{1}{\Delta f},\qquad y_k = H_k\,x_k + n_k$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>OFDM chia băng rộng thành nhiều sóng mang con hẹp, cách nhau Δf. Mỗi sóng mang con đủ hẹp để kênh trên đó gần như phẳng, nên kênh đa đường phức tạp trở thành nhiều phép nhân đơn giản y<sub>k</sub> = H<sub>k</sub>x<sub>k</sub>. Một tiền tố vòng (cyclic prefix) dài hơn độ trễ đa đường giữ các sóng mang con không nhiễu lẫn nhau.</dd>
+        <dt>Lưới tài nguyên</dt><dd>Một khối tài nguyên (RB) gồm 12 sóng mang con. Lập lịch chia RB theo thời gian (slot) và tần số cho người dùng.</dd>
+        <dt>Ví dụ</dt><dd>μ = 1: Δf = 30 kHz, một slot dài 0,5 ms (đúng như phần Scheduling Model trong bài báo của bạn). 100 MHz chứa 273 RB, tức 3.276 sóng mang con; vì RSRP đo trên một sóng mang con nên nó thấp hơn tổng công suất thu khoảng 35 dB.</dd>
+        <dt>Dùng ở</dt><dd>Beamforming digital có thể chọn trọng số riêng cho từng sóng mang con; beamforming analog dùng một trọng số cho cả băng.</dd>
+      </dl>
+    </section>
+
+    <section id="ngau-nhien">
+      <h2><span class="n">13</span>Kênh ngẫu nhiên</h2>
+      <div class="formula">$$n \sim \mathcal{CN}(0,\sigma^2):\ \text{phần thực và ảo độc lập, mỗi phần phương sai } \sigma^2/2$$
+      $$h \sim \mathcal{CN}(0,1) \Rightarrow |h| \text{ có phân phối Rayleigh};\qquad h = \sqrt{\tfrac{K}{K+1}}\,e^{j\phi} + \sqrt{\tfrac{1}{K+1}}\,g \;\;\text{(Rician)}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Tạp âm được mô hình là Gauss phức. Khi không có đường nhìn thẳng, rất nhiều đường phản xạ cộng với pha ngẫu nhiên cho kênh Rayleigh; khi có đường nhìn thẳng mạnh, thêm thành phần cố định và có kênh Rician với hệ số K là tỉ số công suất LoS trên phần còn lại.</dd>
+        <dt>Ví dụ</dt><dd>K = 0: Rayleigh, fading sâu thường xuyên. K = 10 dB trở lên: kênh gần như ổn định. Đường UAV xuống mặt đất ở góc ngẩng cao thường có K lớn.</dd>
+        <dt>Dùng ở</dt><dd>Lý do lái búp theo hình học gần tối ưu cho UAV (mục 3 phần toán beamforming), và lý do mô phỏng của bạn có thể bỏ qua fading nhanh ở timescale lớn.</dd>
+      </dl>
+    </section>
+
+    <section id="vector">
+      <h2><span class="n">14</span>Vector và ma trận</h2>
+      <div class="formula">$$\mathbf a^{\mathsf H}\mathbf b = \sum_n a_n^* b_n,\qquad \|\mathbf a\|^2 = \mathbf a^{\mathsf H}\mathbf a,\qquad |\mathbf a^{\mathsf H}\mathbf b| \le \|\mathbf a\|\,\|\mathbf b\|\;\;\text{(Cauchy–Schwarz)}$$
+      $$\mathbf a\otimes\mathbf b = [a_1\mathbf b;\ a_2\mathbf b;\ \dots],\qquad \mathbf H^{\dagger} = \mathbf H^{\mathsf H}(\mathbf H\mathbf H^{\mathsf H})^{-1}$$</div>
+      <dl class="concept">
+        <dt>Ý nghĩa</dt><dd>Tích vô hướng đo hai vector "giống nhau" tới đâu; dấu H là chuyển vị kèm liên hợp. Cauchy–Schwarz nói tích vô hướng lớn nhất khi hai vector cùng hướng. Tích Kronecker ghép hai vector thành vector của mảng phẳng. Nghịch đảo giả H<sup>†</sup> giải hệ nhiều người dùng.</dd>
+        <dt>Ví dụ</dt><dd>Với a = [1, j] và b = [1, j]: a<sup>H</sup>b = 1·1 + (−j)·j = 2 = ‖a‖·‖b‖, đạt cực đại vì hai vector trùng nhau.</dd>
+        <dt>Dùng ở</dt><dd>Chứng minh trọng số tối ưu là vector lái, công thức mảng phẳng và zero-forcing (mục 3, 6, 7 phần toán beamforming).</dd>
+      </dl>
+    </section>
+
+    <section id="doc-them">
+      <h2><span class="n">15</span>Sách nền tảng</h2>
+      <ul class="refs">
+        <li>A. V. Oppenheim, A. S. Willsky, <i>Signals and Systems</i>, Prentice Hall. Tích chập, Fourier, lấy mẫu.</li>
+        <li>D. Tse, P. Viswanath, <i>Fundamentals of Wireless Communication</i>, Cambridge University Press, 2005. Băng gốc phức, fading, dung lượng, nhiều anten; có bản PDF miễn phí trên trang của tác giả.</li>
+        <li>A. Goldsmith, <i>Wireless Communications</i>, Cambridge University Press, 2005. Lan truyền, điều chế, OFDM.</li>
+        <li>J. G. Proakis, M. Salehi, <i>Digital Communications</i>, McGraw-Hill. Điều chế số và tỉ lệ lỗi.</li>
+      </ul>
+      <p>Khi đã nắm các mục ở trên, đọc tiếp <a href="beamforming-bai-giang.html">bài giảng beamforming</a>.</p>
+    </section>
+  </article>
+</div>
+
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const D2R = Math.PI / 180, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const nf = (v, d = 1) => (v < 0 && Math.abs(v) >= 0.5 * Math.pow(10, -d) ? '−' : '') + Math.abs(v).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d });
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let C = {};
+const theme = () => { for (const k of ['ink', 'muted', 'line', 'cobalt', 'amber', 'danger', 'guide', 'paper', 'stage']) C[k] = cssv('--' + k); };
+theme();
+function fit(cv) { const dpr = Math.min(devicePixelRatio, 2), w = cv.clientWidth, h = cv.height / (cv._dpr || 1); cv._dpr = dpr; cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.height = h + 'px'; const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); return [x, w, h]; }
+const setFill = el => el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%');
+const FONT = '12px "Be Vietnam Pro", system-ui, sans-serif';
+function arrow(x, x0, y0, x1, y1, col, lw) { x.strokeStyle = col; x.fillStyle = col; x.lineWidth = lw; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke();
+  const an = Math.atan2(y1 - y0, x1 - x0), hs = 4 + lw * 1.5; if (Math.hypot(x1 - x0, y1 - y0) > hs) { x.beginPath(); x.moveTo(x1, y1); x.lineTo(x1 - hs * Math.cos(an - 0.4), y1 - hs * Math.sin(an - 0.4)); x.lineTo(x1 - hs * Math.cos(an + 0.4), y1 - hs * Math.sin(an + 0.4)); x.fill(); } }
+
+// ---------- 1. phasor and cosine ----------
+let pPlay = !reduced, pT = 0;
+function drawPhasor() {
+  const A = +$('p-a').value, ph = +$('p-p').value * D2R; $('p-ao').textContent = nf(A, 2); $('p-po').textContent = $('p-p').value + '°'; setFill($('p-a')); setFill($('p-p'));
+  const [x, W, H] = fit($('phasorwave')), R = Math.min(H / 2 - 22, W * 0.16), cx = R + 24, cy = H / 2, wx0 = cx + R + 40, ww = W - wx0 - 12, ang = pT + ph;
+  x.clearRect(0, 0, W, H); x.font = FONT;
+  x.strokeStyle = C.line; x.lineWidth = 1; x.beginPath(); x.arc(cx, cy, R, 0, 2 * Math.PI); x.stroke();
+  x.beginPath(); x.moveTo(cx - R - 8, cy); x.lineTo(cx + R + 8, cy); x.moveTo(cx, cy - R - 8); x.lineTo(cx, cy + R + 8); x.stroke();
+  x.fillStyle = C.muted; x.fillText('Re', cx + R + 10, cy + 4); x.fillText('Im', cx + 4, cy - R - 10);
+  const tx = cx + A * R * Math.cos(ang), ty = cy - A * R * Math.sin(ang);
+  arrow(x, cx, cy, tx, ty, C.cobalt, 2.4);
+  // wave: Re{A e^{j(ωt'+φ)}} drawn vertically-mapped: horizontal axis = time, vertical = real part
+  x.strokeStyle = C.line; x.beginPath(); x.moveTo(wx0, cy); x.lineTo(wx0 + ww, cy); x.stroke();
+  x.strokeStyle = C.amber; x.lineWidth = 2; x.beginPath();
+  for (let i = 0; i <= ww; i += 2) { const tt = pT - i / ww * 4 * Math.PI, v = A * Math.sin(tt + ph); const px = wx0 + i, py = cy - v * R; i ? x.lineTo(px, py) : x.moveTo(px, py); }
+  x.stroke();
+  x.setLineDash([4, 4]); x.strokeStyle = C.guide; x.lineWidth = 1; x.beginPath(); x.moveTo(tx, ty); x.lineTo(wx0, ty); x.stroke(); x.setLineDash([]);
+  x.fillStyle = C.amber; x.beginPath(); x.arc(wx0, ty, 4, 0, 2 * Math.PI); x.fill();
+  x.fillStyle = C.muted; x.fillText('A sin(2πft + φ), thời gian chạy sang phải →', wx0 + 6, 16);
+}
+$('p-play').onclick = () => { pPlay = !pPlay; $('p-play').textContent = pPlay ? 'Tạm dừng' : 'Chạy'; };
+if (!pPlay) $('p-play').textContent = 'Chạy';
+['p-a', 'p-p'].forEach(id => $(id).addEventListener('input', drawPhasor));
+
+// ---------- 5. coherent vs random sum ----------
+let cMode = 'co', seed = 7;
+const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+let phases = Array.from({ length: 32 }, rnd);
+function drawCoh() {
+  const N = +$('c-n').value; $('c-no').textContent = N; setFill($('c-n'));
+  const ph = phases.slice(0, N).map(p => cMode === 'co' ? 0 : p * 2 * Math.PI);
+  let sx = 0, sy = 0; const pts = [[0, 0]]; ph.forEach(p => { sx += Math.cos(p); sy += Math.sin(p); pts.push([sx, sy]); });
+  const P = sx * sx + sy * sy;
+  $('c-p').textContent = nf(P, 1); $('c-db').textContent = (P > 0 ? nf(10 * Math.log10(P), 1) : '−∞') + ' dB';
+  $('c-th').textContent = cMode === 'co' ? 'N² = ' + nf(N * N, 0) : 'trung bình N = ' + nf(N, 0);
+  // chain
+  const [x, W, H] = fit($('cohchain')); x.clearRect(0, 0, W, H);
+  let minx = 0, maxx = 0, miny = 0, maxy = 0; pts.forEach(([u, v]) => { minx = Math.min(minx, u); maxx = Math.max(maxx, u); miny = Math.min(miny, v); maxy = Math.max(maxy, v); });
+  const sc = Math.min(W - 40, H - 40) / Math.max(maxx - minx, maxy - miny, 4), ox = W / 2 - (minx + maxx) / 2 * sc, oy = H / 2 + (miny + maxy) / 2 * sc;
+  for (let n = 1; n < pts.length; n++) arrow(x, ox + pts[n - 1][0] * sc, oy - pts[n - 1][1] * sc, ox + pts[n][0] * sc, oy - pts[n][1] * sc, C.cobalt, 1.5);
+  arrow(x, ox, oy, ox + sx * sc, oy - sy * sc, C.ink, 2.6);
+  x.fillStyle = C.muted; x.font = FONT; x.fillText('Mũi tên đậm: tổng, độ dài bình phương = công suất', 8, 16);
+  // plot
+  const [p, PW, PH] = fit($('cohplot')), L = 40, R = 10, T = 14, B = 26, w = PW - L - R, h = PH - T - B;
+  p.clearRect(0, 0, PW, PH); p.font = FONT;
+  const ymax = 32 * 32, X = n => L + (n - 1) / 31 * w, Y = v => T + h - Math.log10(Math.max(v, 1)) / Math.log10(ymax) * h;
+  p.strokeStyle = C.line; p.fillStyle = C.muted; p.textAlign = 'right'; p.textBaseline = 'middle';
+  for (const v of [1, 10, 100, 1000]) { p.beginPath(); p.moveTo(L, Y(v) + 0.5); p.lineTo(L + w, Y(v) + 0.5); p.stroke(); p.fillText(nf(v, 0), L - 6, Y(v)); }
+  p.textAlign = 'center'; p.textBaseline = 'top'; for (const n of [1, 8, 16, 24, 32]) p.fillText(n, X(n), T + h + 6);
+  p.strokeStyle = C.ink; p.lineWidth = 2; p.beginPath(); for (let n = 1; n <= 32; n++) n === 1 ? p.moveTo(X(n), Y(n * n)) : p.lineTo(X(n), Y(n * n)); p.stroke();
+  p.strokeStyle = C.cobalt; p.setLineDash([5, 4]); p.beginPath(); for (let n = 1; n <= 32; n++) n === 1 ? p.moveTo(X(n), Y(n)) : p.lineTo(X(n), Y(n)); p.stroke(); p.setLineDash([]);
+  p.fillStyle = C.amber; p.beginPath(); p.arc(X(N), Y(Math.max(P, 1)), 5, 0, 2 * Math.PI); p.fill();
+  p.fillStyle = C.muted; p.textAlign = 'left'; p.textBaseline = 'top'; p.fillText('Công suất (thang log) theo N', L + 4, 0);
+}
+$('c-n').addEventListener('input', drawCoh);
+document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { cMode = b.dataset.cm; document.querySelectorAll('[data-cm]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawCoh(); });
+$('c-seed').onclick = () => { phases = Array.from({ length: 32 }, rnd); if (cMode === 'co') { cMode = 'rd'; document.querySelectorAll('[data-cm]').forEach(x => x.setAttribute('aria-pressed', x.dataset.cm === 'rd')); } drawCoh(); };
+
+// ---------- 6. two-path channel ----------
+function drawMP() {
+  const a = +$('m-a').value, tau = +$('m-t').value * 1e-9; $('m-ao').textContent = nf(a, 2); $('m-to').textContent = $('m-t').value + ' ns'; setFill($('m-a')); setFill($('m-t'));
+  const [x, W, H] = fit($('multipath')), L = 44, R = 30, T = 12, B = 28, w = W - L - R, h = H - T - B, ymin = -30, ymax = 8;
+  const X = f => L + (f + 50) / 100 * w, Y = db => T + h - (clamp(db, ymin, ymax) - ymin) / (ymax - ymin) * h;
+  x.clearRect(0, 0, W, H); x.font = FONT; x.strokeStyle = C.line; x.fillStyle = C.muted; x.textAlign = 'right'; x.textBaseline = 'middle';
+  for (const db of [-30, -20, -10, 0]) { x.beginPath(); x.moveTo(L, Y(db) + 0.5); x.lineTo(L + w, Y(db) + 0.5); x.stroke(); x.fillText(db + ' dB', L - 6, Y(db)); }
+  x.textAlign = 'center'; x.textBaseline = 'top'; for (const f of [-50, -25, 0, 25, 50]) x.fillText((f > 0 ? '+' : f < 0 ? '−' : '') + Math.abs(f) + ' MHz', X(f), T + h + 8);
+  x.strokeStyle = C.cobalt; x.lineWidth = 2; x.beginPath();
+  for (let i = 0; i <= 600; i++) { const f = -50 + i / 6, ph = -2 * Math.PI * f * 1e6 * tau, re = 1 + a * Math.cos(ph), im = a * Math.sin(ph), db = 10 * Math.log10(Math.max(re * re + im * im, 1e-6)); i ? x.lineTo(X(f), Y(db)) : x.moveTo(X(f), Y(db)); }
+  x.stroke();
+  x.fillStyle = C.muted; x.textAlign = 'left'; x.textBaseline = 'top';
+  x.fillText(tau > 0 ? 'Khoảng cách giữa hai điểm trũng: 1/Δτ = ' + nf(1 / tau / 1e6, 1) + ' MHz' : 'Δτ = 0: hai đường cộng thẳng, kênh phẳng', L + 6, T + 2);
+}
+['m-a', 'm-t'].forEach(id => $(id).addEventListener('input', drawMP));
+
+// ---------- toc + redraw ----------
+const links = [...document.querySelectorAll('nav.toc a')];
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)); }), { rootMargin: '-30% 0px -60% 0px' });
+document.querySelectorAll('article section').forEach(s => io.observe(s));
+function redrawAll() { drawPhasor(); drawCoh(); drawMP(); }
+new ResizeObserver(redrawAll).observe(document.querySelector('article'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); redrawAll(); });
+redrawAll();
+let last = 0;
+(function loop(now) { if (pPlay && now - last > 33) { last = now; pT += 0.06; drawPhasor(); } requestAnimationFrame(loop); })(0);
+})();
+</script>
+</body>
+</html>
