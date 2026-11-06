@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UAV-BS lái búp sóng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --stage:#E6EAEE; --line:#D3D9DF; --ink:#15202B; --muted:#5B6773;
+  --cobalt:#2747D6; --cobalt-soft:#DCE3FB; --amber:#D9900B;
+  --ramp-0:#D5DEE6; --ramp-1:#4F7FB8; --ramp-2:#F0A72B; --plate:#9AA5B0; --guide:#8B96A1; --body:#4A5562;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1720; --stage:#131E29; --line:#243241; --ink:#E6EDF3; --muted:#8C9AA8;
+    --cobalt:#7F97FF; --cobalt-soft:#1E2A52; --amber:#F2B13A;
+    --ramp-0:#1B2836; --ramp-1:#3F6FAB; --ramp-2:#F5B544; --plate:#4A5868; --guide:#5E6B78; --body:#B8C3CE;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:330px minmax(0,1fr);height:100vh}
+aside{padding:28px 28px 24px;border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column;gap:26px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 8px;letter-spacing:-0.01em}
+.lede{margin:0;color:var(--muted);font-size:14px}
+h2{font-size:14px;font-weight:600;margin:0 0 12px}
+.seg{display:grid;gap:6px}
+.seg button{font:inherit;text-align:left;display:flex;flex-direction:column;gap:1px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer}
+.seg button:hover{border-color:var(--guide)}
+.seg button .t{font-size:14px;font-weight:500}
+.seg button .d{font-size:12.5px;color:var(--muted);line-height:1.4}
+.seg button[aria-pressed="true"]{border-color:var(--cobalt);background:var(--cobalt-soft)}
+.seg button[aria-pressed="true"] .t{color:var(--cobalt)}
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.field label{font-size:14px}
+.val{font-variant-numeric:tabular-nums;font-weight:500;font-size:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--cobalt) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cobalt)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+input[type=range]:focus-visible{outline-offset:4px;border-radius:4px}
+.btn{font:inherit;font-size:13.5px;display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--guide)}
+.btn[aria-pressed="true"]{background:var(--cobalt-soft);border-color:var(--cobalt);color:var(--cobalt)}
+.btn svg{width:15px;height:15px}
+.row{display:flex;gap:8px}
+.row .btn{flex:1}
+.note{margin-top:auto;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+.note p{margin:0 0 6px}
+main{position:relative;background:var(--stage);overflow:hidden}
+#view{position:absolute;inset:0;cursor:grab;touch-action:none}
+#view.grabbing{cursor:grabbing}
+#labels{position:absolute;inset:0;pointer-events:none}
+.tag{position:absolute;transform:translate(-50%,-50%);font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;text-shadow:0 0 3px var(--stage),0 0 3px var(--stage),0 0 6px var(--stage)}
+.tag.hot{color:var(--amber);font-weight:500}
+.tools{position:absolute;top:20px;right:20px;display:flex;gap:8px}
+.hint{position:absolute;top:24px;left:24px;font-size:12.5px;color:var(--muted)}
+.legend{position:absolute;top:72px;right:20px;display:flex;gap:8px;align-items:stretch;font-size:12px;color:var(--muted)}
+.legend .bar{width:8px;height:140px;border-radius:4px;background:linear-gradient(to bottom,var(--ramp-2),var(--ramp-1),var(--ramp-0))}
+.legend .ticks{display:flex;flex-direction:column;justify-content:space-between;font-variant-numeric:tabular-nums}
+.legend .cap{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center}
+.readout{position:absolute;left:20px;bottom:20px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;width:min(640px,calc(100% - 40px));margin:0}
+.readout div{background:var(--paper);padding:10px 16px}
+.readout dt{font-size:12.5px;color:var(--muted)}
+.readout dd{margin:1px 0 0;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.readout dd small{font-size:13px;color:var(--muted);font-weight:400;margin-left:2px}
+.readout dd.up{color:var(--cobalt)}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{display:contents}
+  aside>*{padding:0 16px;margin-bottom:22px}
+  aside>header{order:-2;padding-top:20px;margin-bottom:16px}
+  main{order:-1;margin-bottom:22px}
+  .note{margin:0 16px 24px;padding:16px 0 0}
+  main{height:auto;min-height:0}
+  #view{position:relative;height:60vh;min-height:380px}
+  .readout{position:static;width:auto;margin:0 10px 10px}
+  .readout div{padding:8px 10px}
+  .readout dd{font-size:16px}
+  .tools{top:10px;right:10px}
+  .legend,.hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <header>
+      <h1>UAV-BS lái búp sóng tới người dùng mặt đất</h1>
+      <p class="lede">Mảng anten dưới bụng UAV hướng thẳng xuống. Mặt đất được tô theo SNR mà mỗi điểm nhận được từ búp hiện tại.</p>
+    </header>
+
+    <section>
+      <h2 id="mode-h">Anten của UAV</h2>
+      <div class="seg" role="group" aria-labelledby="mode-h">
+        <button data-m="omni" aria-pressed="false"><span class="t">Đẳng hướng</span><span class="d">Không beamforming, độ lợi 0 dBi theo mọi hướng</span></button>
+        <button data-m="fixed" aria-pressed="false"><span class="t">Búp cố định</span><span class="d">Mảng hướng thẳng xuống, không lái</span></button>
+        <button data-m="steer" aria-pressed="true"><span class="t">Lái búp tới người dùng</span><span class="d">Búp hướng về người dùng đang được phục vụ</span></button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Lập lịch</h2>
+      <div class="row">
+        <button class="btn" id="play" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg><span>Phục vụ lần lượt</span></button>
+      </div>
+      <p class="lede" style="margin-top:10px;font-size:13px">Búp nhảy qua từng người dùng theo vòng tròn, giống Round-Robin. Nhấp vào một người dùng để phục vụ riêng người đó.</p>
+    </section>
+
+    <section>
+      <h2>Thông số</h2>
+      <div class="field"><div class="field-top"><label for="H">Độ cao bay</label><span class="val" id="Ho"></span></div>
+        <input type="range" id="H" min="50" max="300" step="10" value="120"></div>
+      <div class="field"><div class="field-top"><label for="N">Kích thước mảng</label><span class="val" id="No"></span></div>
+        <input type="range" id="N" min="2" max="16" step="1" value="8"></div>
+      <div class="field"><div class="field-top"><label for="SG">Độ phân tán cụm σ</label><span class="val" id="SGo"></span></div>
+        <input type="range" id="SG" min="15" max="120" step="5" value="45"></div>
+      <div class="row"><button class="btn" id="regen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tạo phân bố người dùng mới</button></div>
+    </section>
+
+    <div class="note">
+      <p>Vùng 600 m × 600 m. Người dùng theo Thomas cluster process với 4 cụm. Kênh Al-Hourani môi trường suburban, sóng mang 2 GHz.</p>
+      <p>Công suất phát 30 dBm, băng thông 10 MHz, nhiễu −174 dBm/Hz. Phần tử anten theo 3GPP TR 38.901, cách nhau λ/2.</p>
+    </div>
+  </aside>
+
+  <main>
+    <div id="view" aria-label="Cảnh 3D: kéo để xoay, cuộn để phóng to, nhấp vào người dùng để chọn"></div>
+    <div id="labels"></div>
+    <p class="hint">Kéo để xoay, cuộn để phóng to</p>
+    <div class="tools">
+      <button class="btn" id="reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Góc nhìn ban đầu</button>
+    </div>
+    <div class="legend" aria-hidden="true"><div class="bar"></div><div class="ticks"><span id="lgHi"></span><span id="lgMid"></span><span id="lgLo"></span></div><div class="cap">SNR (dB)</div></div>
+    <dl class="readout">
+      <div><dt>Đang phục vụ</dt><dd id="r-ue">–</dd></div>
+      <div><dt>Khoảng cách ngang</dt><dd id="r-r">–</dd></div>
+      <div><dt>Góc lệch khỏi nadir</dt><dd id="r-a">–</dd></div>
+      <div><dt>Độ lợi anten</dt><dd id="r-g">–</dd></div>
+      <div><dt>SNR</dt><dd id="r-snr">–</dd></div>
+      <div><dt>So với đẳng hướng</dt><dd id="r-d">–</dd></div>
+    </dl>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const D2R = Math.PI / 180, S = 100, AREA = 300;           // 1 scene unit = 100 m, area ±300 m
+const F = 2e9, C = 3e8, PTX = 30, NOISE = -174 + 10 * Math.log10(10e6);
+const A_ = 4.88, B_ = 0.43, ETA_L = 0.1, ETA_N = 21;      // Al-Hourani suburban
+
+let mode = 'steer', playing = true, H = 120, N = 8, sigma = 45, sel = 0, order = [], ordIdx = 0;
+let users = [];
+
+// ---------- physics ----------
+const af1 = (n, psi) => { const s = Math.sin(psi / 2); if (Math.abs(s) < 1e-9) return n * n; const q = Math.sin(n * psi / 2) / s; return q * q; };
+function elem(du, dv, db) {               // 3GPP element, boresight = nadir
+  const td = Math.acos(Math.max(-1, Math.min(1, dv))) / D2R, pd = Math.atan2(du, db) / D2R;
+  const av = -Math.min(12 * ((td - 90) / 65) ** 2, 30), ah = -Math.min(12 * (pd / 65) ** 2, 30);
+  return 8 - Math.min(-(av + ah), 30);
+}
+let u0 = 0, v0 = 0;                       // steering direction cosines
+function gainDir(du, dv, db) {
+  if (mode === 'omni') return 0;
+  return elem(du, dv, db) + 10 * Math.log10(Math.max(af1(N, Math.PI * (du - u0)) * af1(N, Math.PI * (dv - v0)) / (N * N), 1e-9));
+}
+function link(x, y) {                     // x, y in metres relative to UAV ground projection
+  const hh = H - 1.5, r = Math.hypot(x, y), d = Math.hypot(r, hh);
+  const g = gainDir(x / d, y / d, hh / d);
+  const el = Math.atan2(hh, r) / D2R, pl = 1 / (1 + A_ * Math.exp(-B_ * (el - A_)));
+  const PL = 20 * Math.log10(4 * Math.PI * d * F / C) + ETA_L * pl + ETA_N * (1 - pl);
+  return { g, snr: PTX + g - PL - NOISE, r, alpha: Math.atan2(r, hh) / D2R };
+}
+
+// ---------- users: Thomas cluster process ----------
+let seed = 11;
+const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+const gauss = () => Math.sqrt(-2 * Math.log(rnd() || 1e-9)) * Math.cos(2 * Math.PI * rnd());
+let parents = [], offs = [];
+function genParents() {
+  parents = []; offs = [];
+  for (let k = 0; k < 4; k++) { parents.push([(rnd() * 2 - 1) * 210, (rnd() * 2 - 1) * 210]);
+    const m = 7 + Math.floor(rnd() * 6); for (let i = 0; i < m; i++) offs.push([k, gauss(), gauss()]); }
+}
+function placeUsers() {
+  users = offs.map(([k, a, b]) => ({ x: Math.max(-AREA, Math.min(AREA, parents[k][0] + sigma * a)), y: Math.max(-AREA, Math.min(AREA, parents[k][1] + sigma * b)) }));
+  order = users.map((u, i) => i).sort((i, j) => Math.atan2(users[i].y, users[i].x) - Math.atan2(users[j].y, users[j].x));
+  ordIdx = Math.min(ordIdx, order.length - 1); sel = order[ordIdx];
+}
+
+// ---------- scene ----------
+const view = $('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setClearColor(0, 0);
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(35, 1, 0.05, 200);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.8));
+const sun = new THREE.DirectionalLight(0xffffff, 0.5); sun.position.set(3, 8, 4); scene.add(sun);
+const W = (x, y, h = 0) => new THREE.Vector3(x / S, h / S, -y / S);   // metres → scene
+
+// ground heat map
+const M = 150, tex = new THREE.DataTexture(new Uint8Array(M * M * 4), M, M, THREE.RGBAFormat);
+tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2 * AREA / S, 2 * AREA / S), new THREE.MeshBasicMaterial({ map: tex }));
+ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const frameLine = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([W(-AREA, -AREA, 0.5), W(AREA, -AREA, 0.5), W(AREA, AREA, 0.5), W(-AREA, AREA, 0.5)]), new THREE.LineBasicMaterial());
+scene.add(frameLine);
+
+// rings of constant off-nadir angle
+const ringMat = new THREE.LineDashedMaterial({ dashSize: 0.06, gapSize: 0.05, transparent: true, opacity: 0.8 });
+const RING_A = [30, 45, 60], rings = RING_A.map(() => { const l = new THREE.LineLoop(new THREE.BufferGeometry(), ringMat); scene.add(l); return l; });
+
+// UAV
+const uav = new THREE.Group(); scene.add(uav);
+const bodyMat = new THREE.MeshStandardMaterial({ roughness: 0.6 }), plateMat = new THREE.MeshStandardMaterial({ roughness: 0.8 }), dotMat = new THREE.MeshBasicMaterial();
+uav.add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.16), bodyMat));
+const rotors = [];
+for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.015, 0.02), bodyMat);
+  arm.position.set(sx * 0.1, 0.01, sz * 0.1); arm.rotation.y = Math.atan2(-sz, sx); uav.add(arm);
+  const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.006, 24), new THREE.MeshStandardMaterial({ transparent: true, opacity: 0.35 }));
+  rot.position.set(sx * 0.17, 0.035, sz * 0.17); uav.add(rot); rotors.push(rot);
+}
+const panel = new THREE.Group(); panel.position.y = -0.035; uav.add(panel);
+const plate = new THREE.Mesh(new THREE.BoxGeometry(1, 0.008, 1), plateMat); panel.add(plate);
+const dotGeo = new THREE.SphereGeometry(0.006, 8, 8);
+let lastN = 0;
+function buildPanel() {
+  if (lastN === N) return; lastN = N;
+  for (let c = panel.children.length - 1; c > 0; c--) panel.remove(panel.children[c]);
+  const s = Math.min(0.17 / N, 0.022); plate.scale.set(N * s + 0.02, 1, N * s + 0.02);
+  for (let m = 0; m < N; m++) for (let n = 0; n < N; n++) { const d = new THREE.Mesh(dotGeo, dotMat); d.position.set((m - (N - 1) / 2) * s, -0.006, -(n - (N - 1) / 2) * s); panel.add(d); }
+}
+const backhaul = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ dashSize: 0.08, gapSize: 0.06 })); scene.add(backhaul);
+const nadirLine = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ transparent: true, opacity: 0.6 })); scene.add(nadirLine);
+
+// beam lobe
+const LT = 46, LP = 91, lpos = new Float32Array(LT * LP * 3), lcol = new Float32Array(LT * LP * 3), lidx = [];
+for (let i = 0; i < LT - 1; i++) for (let j = 0; j < LP - 1; j++) { const a = i * LP + j, b = a + 1, c = a + LP, d = c + 1; lidx.push(a, c, b, b, c, d); }
+const lgeo = new THREE.BufferGeometry();
+lgeo.setAttribute('position', new THREE.BufferAttribute(lpos, 3)); lgeo.setAttribute('color', new THREE.BufferAttribute(lcol, 3)); lgeo.setIndex(lidx);
+const lobe = new THREE.Mesh(lgeo, new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, opacity: 0.62, side: THREE.DoubleSide, depthWrite: false, roughness: 0.5 }));
+scene.add(lobe);
+const ray = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineDashedMaterial({ dashSize: 0.05, gapSize: 0.035 })); scene.add(ray);
+
+// users
+const ueGeo = new THREE.SphereGeometry(0.035, 16, 12);
+const ueGroup = new THREE.Group(); scene.add(ueGroup);
+const outlineMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+const selRing = new THREE.Mesh(new THREE.RingGeometry(0.07, 0.095, 40), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })); selRing.rotation.x = -Math.PI / 2; scene.add(selRing);
+function buildUsers() {
+  while (ueGroup.children.length) ueGroup.remove(ueGroup.children[0]);
+  users.forEach((u, i) => { const m = new THREE.Mesh(ueGeo, new THREE.MeshStandardMaterial({ roughness: 0.4 })); m.position.copy(W(u.x, u.y, 4)); m.userData.i = i;
+    const o = new THREE.Mesh(ueGeo, outlineMat); o.scale.setScalar(1.28); m.add(o); ueGroup.add(m); u.mesh = m; });
+}
+
+// ---------- colours ----------
+let R0, R1, R2; const tc = new THREE.Color();
+function ramp(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? tc.copy(R0).lerp(R1, t * 2) : tc.copy(R1).lerp(R2, (t - 0.5) * 2); }
+function theme() {
+  R0 = new THREE.Color(cssv('--ramp-0')); R1 = new THREE.Color(cssv('--ramp-1')); R2 = new THREE.Color(cssv('--ramp-2'));
+  const g = cssv('--guide'), amber = cssv('--amber');
+  frameLine.material.color.set(g); ringMat.color.set(g); nadirLine.material.color.set(g);
+  backhaul.material.color.set(cssv('--cobalt')); ray.material.color.set(amber); selRing.material.color.set(amber);
+  bodyMat.color.set(cssv('--body')); plateMat.color.set(cssv('--plate')); dotMat.color.set(cssv('--cobalt'));
+  rotors.forEach(r => r.material.color.set(cssv('--body'))); outlineMat.color.set(cssv('--ink'));
+}
+
+// ---------- update ----------
+const fmt = (v, d = 1) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(d);
+function setFill(el) { el.style.setProperty('--p', (el.value - el.min) / (el.max - el.min) * 100 + '%'); }
+
+function update() {
+  $('Ho').textContent = H + ' m'; $('No').textContent = N + ' × ' + N; $('SGo').textContent = sigma + ' m';
+  ['H', 'N', 'SG'].forEach(id => setFill($(id)));
+  const u = users[sel], hh = H - 1.5;
+  if (mode === 'steer') { const d = Math.hypot(u.x, u.y, hh); u0 = u.x / d; v0 = u.y / d; } else { u0 = 0; v0 = 0; }
+
+  // ground map
+  const vals = new Float32Array(M * M); let hi = -1e9;
+  for (let j = 0; j < M; j++) for (let i = 0; i < M; i++) {
+    const s = link(-AREA + (i + 0.5) * 2 * AREA / M, -AREA + (j + 0.5) * 2 * AREA / M).snr; vals[j * M + i] = s; if (s > hi) hi = s; }
+  const ul = users.map(p => link(p.x, p.y)); ul.forEach(l => { if (l.snr > hi) hi = l.snr; });
+  hi = Math.ceil(hi / 5) * 5; const lo = hi - 40;
+  const data = tex.image.data;
+  for (let k = 0; k < M * M; k++) { const c = ramp((vals[k] - lo) / 40); data[4 * k] = c.r * 255; data[4 * k + 1] = c.g * 255; data[4 * k + 2] = c.b * 255; data[4 * k + 3] = 255; }
+  tex.needsUpdate = true;
+  $('lgHi').textContent = fmt(hi, 0); $('lgMid').textContent = fmt(hi - 20, 0); $('lgLo').textContent = fmt(lo, 0);
+
+  // users
+  users.forEach((p, i) => { p.mesh.material.color.copy(ramp(0.3 + 0.7 * (ul[i].snr - lo) / 40)); p.mesh.scale.setScalar(i === sel ? 1.5 : 1); });
+  selRing.position.copy(W(u.x, u.y, 2));
+
+  // UAV + guides
+  const top = W(0, 0, H); uav.position.copy(top); buildPanel();
+  backhaul.geometry.setFromPoints([top.clone().add(new THREE.Vector3(0, 0.05, 0)), top.clone().add(new THREE.Vector3(0, 0.95, 0))]); backhaul.computeLineDistances();
+  nadirLine.geometry.setFromPoints([top, W(0, 0, 0)]);
+  RING_A.forEach((a, k) => { const r = hh * Math.tan(a * D2R), pts = [];
+    for (let q = 0; q < 96; q++) { const t = q / 96 * 2 * Math.PI; pts.push(W(r * Math.cos(t), r * Math.sin(t), 1)); }
+    rings[k].geometry.setFromPoints(pts); rings[k].computeLineDistances(); rings[k].visible = r < AREA * 1.35; rings[k].userData.r = r; });
+
+  // lobe
+  let pk = -1e9; const G = new Float32Array(LT * LP), dirs = [];
+  for (let i = 0; i < LT; i++) { const t = i * 4 * D2R; for (let j = 0; j < LP; j++) { const p = (j * 4 - 180) * D2R;
+    const du = Math.sin(t) * Math.sin(p), dv = Math.cos(t), db = Math.sin(t) * Math.cos(p), k = i * LP + j;
+    G[k] = gainDir(du, dv, db); dirs.push([du, dv, db]); if (G[k] > pk) pk = G[k]; } }
+  const L = Math.min(0.55 * H / S, 1.3), DRl = 25;
+  for (let k = 0; k < LT * LP; k++) { const r = Math.max(G[k] - pk + DRl, 0) / DRl, [du, dv, db] = dirs[k];
+    lpos[3 * k] = top.x + du * r * L; lpos[3 * k + 1] = top.y - 0.04 - db * r * L; lpos[3 * k + 2] = top.z - dv * r * L;
+    const c = ramp(0.25 + 0.75 * r); lcol[3 * k] = c.r; lcol[3 * k + 1] = c.g; lcol[3 * k + 2] = c.b; }
+  lgeo.attributes.position.needsUpdate = true; lgeo.attributes.color.needsUpdate = true; lgeo.computeVertexNormals(); lgeo.computeBoundingSphere();
+  ray.geometry.setFromPoints([top, W(u.x, u.y, 4)]); ray.computeLineDistances(); ray.visible = mode === 'steer';
+
+  // readout
+  const l = ul[sel], omni = (() => { const m0 = mode; mode = 'omni'; const v = link(u.x, u.y).snr; mode = m0; return v; })();
+  $('r-ue').textContent = 'UE ' + (sel + 1);
+  $('r-r').innerHTML = Math.round(l.r) + '<small>m</small>';
+  $('r-a').innerHTML = Math.round(l.alpha) + '<small>°</small>';
+  $('r-g').innerHTML = fmt(l.g) + '<small>dBi</small>';
+  $('r-snr').innerHTML = fmt(l.snr) + '<small>dB</small>';
+  const dlt = l.snr - omni; $('r-d').innerHTML = (dlt >= 0 ? '+' : '') + fmt(dlt) + '<small>dB</small>';
+  $('r-d').classList.toggle('up', dlt > 0.05);
+}
+
+// ---------- labels ----------
+const labels = $('labels');
+const mk = (t, c) => { const d = document.createElement('div'); d.className = 'tag' + (c ? ' ' + c : ''); d.textContent = t; labels.appendChild(d); return d; };
+const LBL = [
+  ...RING_A.map((a, k) => ({ el: mk('α = ' + a + '°'), p: () => W(rings[k].userData.r * Math.cos(-2.2), rings[k].userData.r * Math.sin(-2.2), 1), show: () => rings[k].visible && rings[k].userData.r < AREA * 1.05 })),
+  { el: mk('Backhaul tới vệ tinh LEO'), p: () => W(0, 0, H + 112) },
+  { el: mk('', 'hot'), p: () => W(users[sel].x, users[sel].y, 30), txt: () => 'UE ' + (sel + 1) }
+];
+const v3 = new THREE.Vector3();
+function placeLabels(w, h) {
+  for (const L of LBL) {
+    const vis = L.show ? L.show() : true; L.el.style.display = vis ? '' : 'none'; if (!vis) continue;
+    if (L.txt) L.el.textContent = L.txt();
+    v3.copy(L.p()).project(camera);
+    L.el.style.left = (v3.x + 1) / 2 * w + 'px'; L.el.style.top = (1 - v3.y) / 2 * h + 'px';
+  }
+}
+
+// ---------- camera ----------
+const HOME = { az: -0.65, el: 0.5, zoom: 1 };
+let cam = { ...HOME }, VW = 1, VH = 1;
+function frame() {
+  const tgt = new THREE.Vector3(0, H / S * 0.35, 0);
+  const vf = camera.fov * D2R, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  const dist = 4.6 / Math.sin(Math.min(vf, hf) / 2) * 0.6 * cam.zoom * (1 + Math.max(0, H - 150) / 350);
+  camera.position.set(tgt.x + dist * Math.cos(cam.el) * Math.sin(cam.az), tgt.y + dist * Math.sin(cam.el), tgt.z + dist * Math.cos(cam.el) * Math.cos(cam.az));
+  camera.lookAt(tgt);
+}
+function size() { VW = view.clientWidth; VH = view.clientHeight; renderer.setSize(VW, VH); camera.aspect = VW / VH;
+  const ro = getComputedStyle($('r-ue').closest('dl')).position === 'absolute' ? $('r-ue').closest('dl').offsetHeight * 0.5 : 0;
+  camera.setViewOffset(VW, VH, 0, ro, VW, VH); camera.updateProjectionMatrix(); frame(); }
+new ResizeObserver(size).observe(view);
+
+const cv = renderer.domElement, rc = new THREE.Raycaster(), mv = new THREE.Vector2();
+let drag = false, moved = 0, px = 0, py = 0;
+cv.addEventListener('pointerdown', e => { drag = true; moved = 0; px = e.clientX; py = e.clientY; cv.setPointerCapture(e.pointerId); view.classList.add('grabbing'); });
+cv.addEventListener('pointermove', e => {
+  if (drag) { const dx = e.clientX - px, dy = e.clientY - py; moved += Math.abs(dx) + Math.abs(dy);
+    cam.az -= dx * 0.006; cam.el = Math.max(0.08, Math.min(1.45, cam.el + dy * 0.006)); px = e.clientX; py = e.clientY; frame(); return; }
+  cv.style.cursor = pick(e) !== null ? 'pointer' : '';
+});
+cv.addEventListener('pointerup', e => { drag = false; view.classList.remove('grabbing');
+  if (moved < 5) { const i = pick(e); if (i !== null) { sel = i; ordIdx = order.indexOf(i); setPlay(false); if (mode !== 'steer') setMode('steer'); else update(); } } });
+cv.addEventListener('wheel', e => { e.preventDefault(); cam.zoom = Math.max(0.45, Math.min(1.8, cam.zoom * Math.exp(e.deltaY * 0.001))); frame(); }, { passive: false });
+function pick(e) {
+  const r = cv.getBoundingClientRect(); mv.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+  rc.setFromCamera(mv, camera); const hit = rc.intersectObjects(ueGroup.children, true)[0]; if (!hit) return null; const o = hit.object.userData.i !== undefined ? hit.object : hit.object.parent; return o.userData.i;
+}
+
+// ---------- controls ----------
+function setMode(m) { mode = m; document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m)); update(); }
+function setPlay(on) { playing = on; $('play').setAttribute('aria-pressed', on); $('play').querySelector('span').textContent = on ? 'Phục vụ lần lượt' : 'Tiếp tục phục vụ lần lượt'; }
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setMode(b.dataset.m));
+$('play').onclick = () => setPlay(!playing);
+$('reset').onclick = () => { cam = { ...HOME }; frame(); };
+$('H').oninput = e => { H = +e.target.value; update(); frame(); };
+$('N').oninput = e => { N = +e.target.value; update(); };
+$('SG').oninput = e => { sigma = +e.target.value; placeUsers(); buildUsers(); update(); };
+$('regen').onclick = () => { seed = Math.floor(Math.random() * 1e9); genParents(); ordIdx = 0; placeUsers(); buildUsers(); update(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); update(); });
+
+genParents(); placeUsers(); buildUsers(); theme(); size(); update();
+if (reduced) setPlay(false);
+
+let last = 0;
+(function loop(t) {
+  if (playing && t - last > 900) { last = t; ordIdx = (ordIdx + 1) % order.length; sel = order[ordIdx]; update(); }
+  if (!reduced) rotors.forEach(r => r.rotation.y += 0.6);
+  renderer.render(scene, camera); placeLabels(VW, VH); requestAnimationFrame(loop);
+})(0);
+})();
+</script>
+</body>
+</html>
