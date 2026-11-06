@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Búp sóng mảng anten phẳng</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F6; --stage:#E6EAEE; --line:#D3D9DF; --ink:#15202B; --muted:#5B6773;
+  --cobalt:#2747D6; --cobalt-soft:#DCE3FB; --amber:#D9900B;
+  --ramp-0:#C3D0DC; --ramp-1:#4F7FB8; --ramp-2:#F0A72B; --plate:#B9C2CB; --guide:#8B96A1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0F1720; --stage:#131E29; --line:#243241; --ink:#E6EDF3; --muted:#8C9AA8;
+    --cobalt:#7F97FF; --cobalt-soft:#1E2A52; --amber:#F2B13A;
+    --ramp-0:#2A3B4D; --ramp-1:#4C7DBA; --ramp-2:#F5B544; --plate:#3A4756; --guide:#5E6B78;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.app{display:grid;grid-template-columns:320px minmax(0,1fr);height:100vh}
+aside{padding:28px 28px 24px;border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:22px;line-height:1.25;font-weight:600;margin:0 0 8px;letter-spacing:-0.01em}
+.lede{margin:0;color:var(--muted);font-size:14px}
+h2{font-size:14px;font-weight:600;margin:0 0 12px}
+.seg{display:grid;gap:6px}
+.seg button{font:inherit;text-align:left;display:flex;flex-direction:column;gap:1px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer}
+.seg button:hover{border-color:var(--guide)}
+.seg button .t{font-size:14px;font-weight:500}
+.seg button .d{font-size:12.5px;color:var(--muted);line-height:1.4}
+.seg button[aria-pressed="true"]{border-color:var(--cobalt);background:var(--cobalt-soft)}
+.seg button[aria-pressed="true"] .t{color:var(--cobalt)}
+.field{margin-bottom:16px}
+.field:last-child{margin-bottom:0}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.field label{font-size:14px}
+.val{font-variant-numeric:tabular-nums;font-weight:500;font-size:14px}
+fieldset{border:0;margin:0;padding:0;transition:opacity .2s}
+fieldset:disabled{opacity:.4}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--cobalt) var(--p,50%),var(--line) var(--p,50%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cobalt)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}
+input[type=range]:focus-visible{outline-offset:4px;border-radius:4px}
+.note{margin-top:auto;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+.note p{margin:0 0 6px}
+main{position:relative;background:var(--stage);overflow:hidden}
+#view{position:absolute;inset:0;cursor:grab;touch-action:none}
+#view:active{cursor:grabbing}
+#labels{position:absolute;inset:0;pointer-events:none}
+.tag{position:absolute;transform:translate(-50%,-50%);font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tag.steer{color:var(--amber);font-weight:500}
+.tools{position:absolute;top:20px;right:20px;display:flex;gap:8px}
+.tool{font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.tool[aria-pressed="true"]{background:var(--cobalt-soft);border-color:var(--cobalt);color:var(--cobalt)}
+.tool svg{width:15px;height:15px}
+.legend{position:absolute;top:72px;right:20px;display:flex;gap:8px;align-items:stretch;font-size:12px;color:var(--muted)}
+.legend .bar{width:8px;height:140px;border-radius:4px;background:linear-gradient(to bottom,var(--ramp-2),var(--ramp-1),var(--ramp-0))}
+.legend .ticks{display:flex;flex-direction:column;justify-content:space-between;font-variant-numeric:tabular-nums}
+.readout{position:absolute;left:20px;right:20px;bottom:20px;display:flex;flex-wrap:wrap;gap:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;max-width:640px}
+.readout div{flex:1 1 150px;padding:12px 18px}
+.readout div+div{border-left:1px solid var(--line)}
+.readout dt{font-size:12.5px;color:var(--muted)}
+.readout dd{margin:2px 0 0;font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.readout dd small{font-size:14px;color:var(--muted);font-weight:400;margin-left:2px}
+.hint{position:absolute;top:24px;left:24px;font-size:12.5px;color:var(--muted)}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;height:auto}
+  aside{display:contents}
+  aside>*{padding:0 16px;margin-bottom:22px}
+  aside>header{order:-2;padding-top:20px;margin-bottom:16px}
+  main{order:-1;height:62vh;min-height:400px;margin-bottom:22px}
+  .note{margin:0 16px 24px;padding:16px 0 0}
+  .legend{display:none}
+  .readout{left:12px;right:12px;bottom:12px}
+  .readout div{padding:10px 12px;flex-basis:100px}
+  .readout dd{font-size:18px}
+  .tools{top:12px;right:12px}
+  .legend{top:60px;right:12px}
+  .legend .bar{height:100px}
+  .hint{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <header>
+      <h1>Búp sóng của mảng anten phẳng</h1>
+      <p class="lede">Thay đổi kích thước mảng và hướng lái để xem búp sóng co giãn và dịch chuyển thế nào. Mẫu phần tử theo 3GPP TR 38.901.</p>
+    </header>
+
+    <section>
+      <h2 id="mode-h">Mô hình</h2>
+      <div class="seg" role="group" aria-labelledby="mode-h">
+        <button data-m="el" aria-pressed="false"><span class="t">Phần tử đơn</span><span class="d">Độ lợi tối đa 8 dBi, búp rộng 65°, không lái được</span></button>
+        <button data-m="upa" aria-pressed="false"><span class="t">Mảng đẳng hướng</span><span class="d">Lái được, nhưng có búp đối xứng phía sau panel</span></button>
+        <button data-m="full" aria-pressed="true"><span class="t">Mảng 3GPP</span><span class="d">Mảng các phần tử 3GPP, gần với panel anten thực tế</span></button>
+      </div>
+    </section>
+
+    <fieldset id="fs-array">
+      <h2>Kích thước mảng</h2>
+      <div class="field"><div class="field-top"><label for="NH">Số phần tử ngang</label><span class="val" id="NHo"></span></div>
+        <input type="range" id="NH" min="1" max="16" step="1" value="8"></div>
+      <div class="field"><div class="field-top"><label for="NV">Số phần tử dọc</label><span class="val" id="NVo"></span></div>
+        <input type="range" id="NV" min="1" max="16" step="1" value="4"></div>
+    </fieldset>
+
+    <fieldset id="fs-steer">
+      <h2>Hướng lái</h2>
+      <div class="field"><div class="field-top"><label for="AZ">Phương vị</label><span class="val" id="AZo"></span></div>
+        <input type="range" id="AZ" min="-60" max="60" step="1" value="25"></div>
+      <div class="field"><div class="field-top"><label for="EL">Góc ngẩng</label><span class="val" id="ELo"></span></div>
+        <input type="range" id="EL" min="-60" max="60" step="1" value="-15"></div>
+    </fieldset>
+
+    <div class="note">
+      <p>Các phần tử cách nhau λ/2, trọng số lái là steering vector. Bán kính bề mặt thể hiện độ lợi so với đỉnh, trong dải 30 dB.</p>
+      <p>Suy hao do lái là phần độ lợi mất đi so với khi búp hướng thẳng chính diện.</p>
+    </div>
+  </aside>
+
+  <main>
+    <div id="view" aria-label="Búp sóng 3D, kéo để xoay, cuộn để phóng to"></div>
+    <div id="labels"></div>
+    <p class="hint">Kéo để xoay, cuộn để phóng to</p>
+    <div class="tools">
+      <button class="tool" id="spin" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>Tự xoay</button>
+      <button class="tool" id="reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Góc nhìn ban đầu</button>
+    </div>
+    <div class="legend" aria-hidden="true"><div class="bar"></div><div class="ticks"><span>0 dB</span><span>−15</span><span>−30</span></div></div>
+    <dl class="readout">
+      <div><dt>Độ lợi cực đại</dt><dd id="pk">–</dd></div>
+      <div><dt>Hướng cực đại</dt><dd id="dir">–</dd></div>
+      <div><dt>Suy hao do lái</dt><dd id="sc">–</dd></div>
+    </dl>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let mode = 'full', spin = !reduced;
+
+const view = $('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setClearColor(0, 0);
+view.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 0.75));
+const key = new THREE.DirectionalLight(0xffffff, 0.55); key.position.set(3, 4, 5); scene.add(key);
+
+const grp = new THREE.Group(); scene.add(grp);
+const HOME = { ry: -0.85, rx: 0.32 };
+grp.rotation.set(HOME.rx, HOME.ry, 0);
+
+const NT = 91, NP = 181, D2R = Math.PI / 180, DR = 30;
+const pos = new Float32Array(NT * NP * 3), col = new Float32Array(NT * NP * 3), G = new Float32Array(NT * NP), idx = [];
+for (let i = 0; i < NT - 1; i++) for (let j = 0; j < NP - 1; j++) { const a = i * NP + j, b = a + 1, c = a + NP, d = c + 1; idx.push(a, c, b, b, c, d); }
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+geo.setIndex(idx);
+grp.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, metalness: 0 })));
+
+const dirv = (t, p, r) => new THREE.Vector3(r * Math.sin(t) * Math.cos(p), r * Math.cos(t), -r * Math.sin(t) * Math.sin(p));
+
+const guideMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0.55 });
+const rings = new THREE.Group(); grp.add(rings);
+[1, 2 / 3, 1 / 3].forEach(r => {
+  const pts = []; for (let k = 0; k <= 128; k++) { const a = k / 128 * 2 * Math.PI; pts.push(new THREE.Vector3(r * Math.cos(a), 0, r * Math.sin(a))); }
+  rings.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), guideMat));
+});
+for (let k = 0; k < 12; k++) { const a = k * Math.PI / 6;
+  rings.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(Math.cos(a), 0, Math.sin(a))]), guideMat)); }
+
+const boreMat = new THREE.LineBasicMaterial();
+grp.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1.3, 0, 0)]), boreMat));
+const stGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]);
+const steerMat = new THREE.LineDashedMaterial({ dashSize: 0.05, gapSize: 0.035 });
+const steer = new THREE.Line(stGeo, steerMat); grp.add(steer);
+const peakMat = new THREE.MeshBasicMaterial();
+const peak = new THREE.Mesh(new THREE.SphereGeometry(0.022, 16, 16), peakMat); grp.add(peak);
+
+const panel = new THREE.Group(); grp.add(panel);
+const plateMat = new THREE.MeshStandardMaterial({ roughness: 0.8, transparent: true, opacity: 0.85 });
+const plate = new THREE.Mesh(new THREE.BoxGeometry(0.01, 1, 1), plateMat); panel.add(plate);
+const dotMat = new THREE.MeshBasicMaterial(), dotGeo = new THREE.SphereGeometry(0.011, 10, 10);
+
+let R0, R1, R2;
+function theme() {
+  R0 = new THREE.Color(cssv('--ramp-0')); R1 = new THREE.Color(cssv('--ramp-1')); R2 = new THREE.Color(cssv('--ramp-2'));
+  guideMat.color.set(cssv('--guide')); boreMat.color.set(cssv('--guide'));
+  steerMat.color.set(cssv('--amber')); peakMat.color.set(cssv('--amber'));
+  plateMat.color.set(cssv('--plate')); dotMat.color.set(cssv('--cobalt'));
+}
+const tmp = new THREE.Color();
+function ramp(t) { return t < 0.5 ? tmp.copy(R0).lerp(R1, t * 2) : tmp.copy(R1).lerp(R2, (t - 0.5) * 2); }
+
+const af1 = (N, psi) => { const s = Math.sin(psi / 2); if (Math.abs(s) < 1e-9) return N * N; const q = Math.sin(N * psi / 2) / s; return q * q; };
+const elem = (td, pd) => { const av = -Math.min(12 * ((td - 90) / 65) ** 2, 30), ah = -Math.min(12 * (pd / 65) ** 2, 30); return 8 - Math.min(-(av + ah), 30); };
+const fmtDeg = v => (v < 0 ? '−' : '') + Math.abs(v) + '°';
+
+function setFill(el) { const p = (el.value - el.min) / (el.max - el.min) * 100; el.style.setProperty('--p', p + '%'); }
+
+let lastN = '', t0 = 0, p0 = 0, peakDir = new THREE.Vector3();
+function update() {
+  const NH = +$('NH').value, NV = +$('NV').value, az = +$('AZ').value, el = +$('EL').value;
+  $('NHo').textContent = NH; $('NVo').textContent = NV; $('AZo').textContent = fmtDeg(az); $('ELo').textContent = fmtDeg(el);
+  ['NH', 'NV', 'AZ', 'EL'].forEach(id => setFill($(id)));
+  const arr = mode !== 'el', ele = mode !== 'upa';
+  $('fs-array').disabled = !arr; $('fs-steer').disabled = !arr;
+
+  t0 = (90 - el) * D2R; p0 = az * D2R;
+  const sy = Math.sin(t0) * Math.sin(p0), cz = Math.cos(t0);
+  let pk = -1e9, pi = 0;
+  for (let i = 0; i < NT; i++) { const t = i * 2 * D2R, st = Math.sin(t), ct = Math.cos(t);
+    for (let j = 0; j < NP; j++) { const p = (j * 2 - 180) * D2R, k = i * NP + j; let g = 0;
+      if (ele) g += elem(i * 2, j * 2 - 180);
+      if (arr) g += 10 * Math.log10(Math.max(af1(NH, Math.PI * (st * Math.sin(p) - sy)) * af1(NV, Math.PI * (ct - cz)) / (NH * NV), 1e-9));
+      G[k] = g; if (g > pk) { pk = g; pi = k; } } }
+  const fl = pk - DR;
+  for (let i = 0; i < NT; i++) { const t = i * 2 * D2R;
+    for (let j = 0; j < NP; j++) { const k = i * NP + j, p = (j * 2 - 180) * D2R, r = Math.max(G[k] - fl, 0) / DR, v = dirv(t, p, r), c = ramp(r);
+      pos[3 * k] = v.x; pos[3 * k + 1] = v.y; pos[3 * k + 2] = v.z; col[3 * k] = c.r; col[3 * k + 1] = c.g; col[3 * k + 2] = c.b; } }
+  geo.attributes.position.needsUpdate = true; geo.attributes.color.needsUpdate = true;
+  geo.computeVertexNormals(); geo.computeBoundingSphere();
+
+  stGeo.setFromPoints([new THREE.Vector3(), dirv(t0, p0, 1.3)]); steer.computeLineDistances(); steer.visible = arr;
+  const ti = Math.floor(pi / NP), tj = pi % NP;
+  peakDir = dirv(ti * 2 * D2R, (tj * 2 - 180) * D2R, 1.02); peak.position.copy(peakDir);
+
+  const keyN = NH + 'x' + NV;
+  if (keyN !== lastN) { lastN = keyN;
+    for (let c = panel.children.length - 1; c > 0; c--) panel.remove(panel.children[c]);
+    const s = Math.min(0.42 / Math.max(NH, NV), 0.055);
+    plate.scale.set(1, NV * s + 0.04, NH * s + 0.04);
+    for (let m = 0; m < NH; m++) for (let n = 0; n < NV; n++) { const d = new THREE.Mesh(dotGeo, dotMat); d.position.set(0.008, (n - (NV - 1) / 2) * s, -(m - (NH - 1) / 2) * s); panel.add(d); } }
+
+  $('pk').innerHTML = pk.toFixed(1) + '<small>dBi</small>';
+  $('dir').textContent = fmtDeg(tj * 2 - 180) + ', ' + fmtDeg(90 - ti * 2);
+  const ideal = (ele ? 8 : 0) + 10 * Math.log10(NH * NV);
+  $('sc').innerHTML = arr ? Math.max(ideal - pk, 0).toFixed(1) + '<small>dB</small>' : '–';
+}
+
+// labels projected from 3D
+const labels = $('labels');
+const mk = (txt, cls) => { const d = document.createElement('div'); d.className = 'tag' + (cls ? ' ' + cls : ''); d.textContent = txt; labels.appendChild(d); return d; };
+const LBL = [
+  { el: mk('0 dB'), p: () => new THREE.Vector3(Math.cos(2.4), 0, Math.sin(2.4)).multiplyScalar(1.06) },
+  { el: mk('−10'), p: () => new THREE.Vector3(Math.cos(2.4), 0, Math.sin(2.4)).multiplyScalar(2 / 3 + 0.06) },
+  { el: mk('−20'), p: () => new THREE.Vector3(Math.cos(2.4), 0, Math.sin(2.4)).multiplyScalar(1 / 3 + 0.06) },
+  { el: mk('Chính diện'), p: () => new THREE.Vector3(1.42, 0, 0) },
+  { el: mk('Hướng lái', 'steer'), p: () => dirv(t0, p0, 1.42), show: () => mode !== 'el' }
+];
+const v3 = new THREE.Vector3();
+function placeLabels(w, h) {
+  const placed = [];
+  for (const L of LBL) {
+    const vis = L.show ? L.show() : true; L.el.style.display = vis ? '' : 'none'; if (!vis) continue;
+    v3.copy(L.p()).applyMatrix4(grp.matrixWorld).project(camera);
+    let x = (v3.x + 1) / 2 * w, y = (1 - v3.y) / 2 * h; const lw = L.el.offsetWidth + 8;
+    for (let k = 0; k < 3; k++) {
+      const hit = placed.find(q => Math.abs(q.x - x) < (q.w + lw) / 2 && Math.abs(q.y - y) < 18);
+      if (!hit) break; y = hit.y + (y >= hit.y ? 18 : -18);
+    }
+    placed.push({ x, y, w: lw });
+    L.el.style.left = x + 'px'; L.el.style.top = y + 'px';
+  }
+}
+
+// camera framing and interaction
+let zoom = 1, W = 1, H = 1;
+const target = new THREE.Vector3(0.15, 0.05, 0);
+function frame() {
+  const vf = camera.fov * D2R, hf = 2 * Math.atan(Math.tan(vf / 2) * camera.aspect);
+  const dist = 1.5 / Math.sin(Math.min(vf, hf) / 2) * zoom;
+  camera.position.set(target.x, target.y + dist * 0.18, target.z + dist); camera.lookAt(target);
+}
+function size() { W = view.clientWidth; H = view.clientHeight; renderer.setSize(W, H); camera.aspect = W / H; camera.updateProjectionMatrix(); frame(); }
+new ResizeObserver(size).observe(view);
+
+const setSpin = on => { spin = on; $('spin').setAttribute('aria-pressed', on); };
+let drag = false, px = 0, py = 0;
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', e => { drag = true; setSpin(false); px = e.clientX; py = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return;
+  grp.rotation.y += (e.clientX - px) * 0.008;
+  grp.rotation.x = Math.max(-1.3, Math.min(1.3, grp.rotation.x + (e.clientY - py) * 0.008));
+  px = e.clientX; py = e.clientY; });
+cv.addEventListener('pointerup', () => drag = false);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(0.55, Math.min(1.8, zoom * Math.exp(e.deltaY * 0.001))); frame(); }, { passive: false });
+
+$('spin').onclick = () => setSpin(!spin);
+$('reset').onclick = () => { grp.rotation.set(HOME.rx, HOME.ry, 0); zoom = 1; frame(); };
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => {
+  mode = b.dataset.m; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); update(); });
+['NH', 'NV', 'AZ', 'EL'].forEach(id => $(id).addEventListener('input', update));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); update(); });
+
+theme(); setSpin(spin); size(); update();
+(function loop() { if (spin) grp.rotation.y += 0.003; grp.updateMatrixWorld(); renderer.render(scene, camera); placeLabels(W, H); requestAnimationFrame(loop); })();
+})();
+</script>
+</body>
+</html>
