@@ -368,8 +368,9 @@ const LB = { f: 3.5e9, B: 100, P: Math.pow(10, 3.7), N: 8, L: 4, nf: Math.pow(10
 MM.noise = N0 * MM.B * 1e6 * MM.nf; LB.noise = N0 * LB.B * 1e6 * LB.nf;
 const ETA = 0.7;
 const elemDb = a => 8 - Math.min(12 * (a / 65) ** 2, 30);
-function link(R, ux, uy, uh, c, extraDb) {
-  const r = Math.hypot(CX[c] - ux, CY[c] - uy), h = Math.max(uh - CH[c], 1), d = Math.hypot(r, h);
+const link = (R, ux, uy, uh, c, extraDb) => linkXY(R, ux, uy, uh, CX[c], CY[c], CH[c], extraDb);
+function linkXY(R, ux, uy, uh, cx, cy, ch, extraDb) {
+  const r = Math.hypot(cx - ux, cy - uy), h = Math.max(uh - ch, 1), d = Math.hypot(r, h);
   const th = Math.atan2(h, r) / D2R, pl = 1 / (1 + A_U * Math.exp(-B_U * (th - A_U)));
   const PLdb = 20 * Math.log10(4 * Math.PI * d * R.f / C) + ETA_L * pl + ETA_N * (1 - pl) + R.body + extraDb;
   const e = elemDb(Math.atan2(r, h) / D2R), g = Math.pow(10, -PLdb / 10);
@@ -386,10 +387,15 @@ for (let j = 0; j < SHn; j++) for (let i = 0; i < SW; i++) {
   if (inOuter(x, y) && !inInner(x, y)) SHM[k] = Math.max(seatHeight(x, y), 0.5);
   ROOF[k] = underRoof(x, y) ? 1 : 0;
 }
+const FX0 = -130, FY0 = -136, FR = 5, FW = 52, FH = 55, FN = FW * FH;
+const FXc = new Float32Array(FN), FYc = new Float32Array(FN), FCH = new Float32Array(FN), FIN = new Uint8Array(FN);
+for (let j = 0; j < FH; j++) for (let i = 0; i < FW; i++) { const k = j * FW + i, x = FX0 + (i + 0.5) * FR, y = FY0 + (j + 0.5) * FR;
+  FXc[k] = x; FYc[k] = y; FIN[k] = inOuter(x, y) ? 1 : 0; FCH[k] = FIN[k] && !inInner(x, y) ? Math.max(seatHeight(x, y), 1.5) : 1.5; }
 for (let c = 0; c < NC; c++) CH[c] = inOuter(CX[c], CY[c]) && !inInner(CX[c], CY[c]) ? Math.max(seatHeight(CX[c], CY[c]), 1.5) : 1.5;
 // 0 = clear, 1 = through the roof, 2 = through the stand structure
-function blockType(ux, uy, uh, c) {
-  const cx = CX[c], cy = CY[c], ch = CH[c]; let t = 0;
+const blockType = (ux, uy, uh, c) => blockXY(ux, uy, uh, CX[c], CY[c], CH[c]);
+function blockXY(ux, uy, uh, cx, cy, ch) {
+  let t = 0;
   for (let k = 1; k < 12; k++) {
     const f = k / 12, i = Math.floor((ux + (cx - ux) * f - SX0) / SR), j = Math.floor((uy + (cy - uy) * f - SY0) / SR);
     if (i < 0 || j < 0 || i >= SW || j >= SHn) continue;
@@ -572,18 +578,18 @@ planeRect(-33.5, 33.5, -52.5, 52.5, 0.4, mats.pitch);
 
 mat('stand', {}); mat('roof', { transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }); mat('arch', { roughness: 0.5 }); mat('stage', {});
 (function stands() {
-  const NTH = 160, NR = 7, pos = [], idx = [];
+  const NTH = 160, NR = 7, pos = [], idx = [], uv = [];
   for (let i = 0; i <= NTH; i++) { const th = i / NTH * 2 * Math.PI, pi = se(IN.a, IN.b, th), po = se(OUT.a, OUT.b, th), H = standTop(th);
-    for (let r = 0; r < NR; r++) { const u = r / (NR - 2); if (r < NR - 1) pos.push(...V(pi[0] + (po[0] - pi[0]) * u, pi[1] + (po[1] - pi[1]) * u, 1 + (H - 1) * u).toArray()); else pos.push(...V(po[0], po[1], 0).toArray()); } }
+    for (let r = 0; r < NR; r++) { const u = Math.min(r / (NR - 2), 1), x = pi[0] + (po[0] - pi[0]) * u, y = pi[1] + (po[1] - pi[1]) * u;
+      pos.push(...V(x, y, r < NR - 1 ? 1 + (H - 1) * u : 0).toArray()); uv.push((x - FX0) / (FW * FR), (y - FY0) / (FH * FR)); } }
   for (let i = 0; i < NTH; i++) for (let r = 0; r < NR - 1; r++) { const a = i * NR + r, b = a + 1, c = a + NR, d = c + 1; idx.push(a, c, b, b, c, d); }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  mats.standGeo = g;
   scene.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide })));
   mats.standMesh = scene.children[scene.children.length - 1].material;
 })();
 for (const sg of [1, -1]) {
   const roof = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.25, 20), mats.roof); roof.position.copy(V(sg * 90, 0, 35)); scene.add(roof);
-  const pts = []; for (let k = 0; k <= 40; k++) { const y = -140 + k * 7; pts.push(V(sg * 106, y, 4 + 62 * (1 - (y / 140) ** 2))); }
-  scene.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 80, 0.18, 8), mats.arch));
 }
 const stage = new THREE.Mesh(new THREE.BoxGeometry(5, 0.4, 1.4), mats.stage); stage.position.copy(V(0, -58, 2)); scene.add(stage);
 const backdrop = new THREE.Mesh(new THREE.BoxGeometry(5, 1.8, 0.15), mats.stage); backdrop.position.copy(V(0, -64, 9)); scene.add(backdrop);
@@ -592,6 +598,11 @@ const pad = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.1, 32), mats.stage
 // ground data overlay
 const tex = new THREE.DataTexture(new Uint8Array(NC * 4), NX, NY, THREE.RGBAFormat); tex.magFilter = tex.minFilter = THREE.LinearFilter;
 const overlay = planeRect(X0, X1, Y0, Y1, 1.2, new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+// finer map draped on the pitch, track and stands so the stadium does not hide it
+const ftex = new THREE.DataTexture(new Uint8Array(FW * FH * 4), FW, FH, THREE.RGBAFormat); ftex.magFilter = ftex.minFilter = THREE.LinearFilter;
+const fmat = new THREE.MeshBasicMaterial({ map: ftex, transparent: true, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+const fineFloor = planeRect(FX0, FX0 + FW * FR, FY0, FY0 + FH * FR, 1.6, fmat);
+const fineStands = new THREE.Mesh(mats.standGeo, fmat); scene.add(fineStands);
 
 // people
 function pointsLayer(n, size) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); const m = new THREE.PointsMaterial({ size, sizeAttenuation: false }); const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p); return p; }
@@ -709,33 +720,44 @@ function updateUAVs() {
   }
   if (!reduced) for (const g of uavs) if (g.visible) g.children.forEach((c, k) => { if (k >= 3 && k <= 6) c.rotation.y += 0.5; });
 }
+function sinrAt(x, y, h, act, sn) {
+  let ItM = 0, ItL = 0, bm = -1, bsm = 0, bl = -1, bsl = 0, iM = 0, iL = 0;
+  for (const u of act) {
+    const o = (sn * KMAX + u) * 3, ux = S.upos[o], uy = S.upos[o + 1], uh = S.upos[o + 2], b = blockXY(ux, uy, uh, x, y, h), k = sn * KMAX + u;
+    const m = linkXY(MM, ux, uy, uh, x, y, h, lossOf(MM, b)), l = linkXY(LB, ux, uy, uh, x, y, h, lossOf(LB, b)), hd = Math.hypot(x - ux, y - uy);
+    const im = Math.min(S.loadM[k], 1) * m[1], il = Math.min(S.loadL[k], 1) * l[1]; ItM += im; ItL += il;
+    if (hd <= MM.range && m[0] > bsm) { bsm = m[0]; bm = u; iM = im; } if (hd <= LB.range && l[0] > bsl) { bsl = l[0]; bl = u; iL = il; }
+  }
+  const sM = bm >= 0 ? bsm / (ItM - iM + MM.noise) : 0, sL = bl >= 0 ? bsl / (ItL - iL + LB.noise) : 0;
+  return MM.B * seOf(sM, 5.5) >= LB.B * seOf(sL, 5.5) ? sM : sL;
+}
+function paint(data, o, k, a) { const col = ramp(k); data[o] = col.r * 255; data[o + 1] = col.g * 255; data[o + 2] = col.b * 255; data[o + 3] = a; }
 function updateMap() {
   const sn = Math.round(t / STEP); if (sn === lastMapStep) return; lastMapStep = sn;
-  overlay.visible = mapMode !== 'off'; $('legend').style.display = mapMode === 'off' ? 'none' : '';
-  if (mapMode === 'off') return;
-  const data = tex.image.data;
+  const on = mapMode !== 'off'; overlay.visible = fineFloor.visible = fineStands.visible = on; $('legend').style.display = on ? '' : 'none';
+  if (!on) return;
+  const data = tex.image.data, fd = ftex.image.data;
   if (mapMode === 'demand') {
     const base = sn * NC;
-    for (let c = 0; c < NC; c++) { const v = S.cellD[base + c], k = v > 0 ? clamp(Math.log10(v) / 3, 0, 1) : 0, col = ramp(k);
-      data[4 * c] = col.r * 255; data[4 * c + 1] = col.g * 255; data[4 * c + 2] = col.b * 255; data[4 * c + 3] = v > 0.5 ? 70 + 160 * k : 0; }
+    for (let c = 0; c < NC; c++) { const v = S.cellD[base + c], k = v > 0 ? clamp(Math.log10(v) / 3, 0, 1) : 0; paint(data, 4 * c, k, v > 0.5 ? 70 + 160 * k : 0); }
+    for (let q = 0; q < FN; q++) {
+      if (!FIN[q]) { fd[4 * q + 3] = 0; continue; }
+      const gx = (FXc[q] - X0) / CELL - 0.5, gy = (FYc[q] - Y0) / CELL - 0.5, i0 = Math.floor(gx), j0 = Math.floor(gy), fx = gx - i0, fy = gy - j0;
+      const at = (i, j) => S.cellD[base + clamp(i, 0, NX - 1) + NX * clamp(j, 0, NY - 1)];
+      const v = (at(i0, j0) * (1 - fx) + at(i0 + 1, j0) * fx) * (1 - fy) + (at(i0, j0 + 1) * (1 - fx) + at(i0 + 1, j0 + 1) * fx) * fy;
+      const k = v > 0 ? clamp(Math.log10(v) / 3, 0, 1) : 0; paint(fd, 4 * q, k, v > 0.5 ? 110 + 130 * k : 0);
+    }
     $('lgHi').textContent = '≥ 1 Gbps/ô'; $('lgMid').textContent = '30 Mbps'; $('lgLo').textContent = '1 Mbps';
   } else {
     const act = []; for (let u = 0; u < KMAX; u++) if (S.uact[sn * KMAX + u]) act.push(u);
-    const L = new Float32Array(act.length * 4);
-    for (let c = 0; c < NC; c++) {
-      let ItM = 0, ItL = 0, bm = -1, bsm = 0, bln = -1, bsl = 0;
-      act.forEach((u, a) => { const o = (sn * KMAX + u) * 3, x = S.upos[o], y = S.upos[o + 1], h = S.upos[o + 2], b = blockType(x, y, h, c);
-        const m = link(MM, x, y, h, c, lossOf(MM, b)), l = link(LB, x, y, h, c, lossOf(LB, b)), k = sn * KMAX + u;
-        L[a * 4] = m[0]; L[a * 4 + 1] = Math.min(S.loadM[k], 1) * m[1]; L[a * 4 + 2] = l[0]; L[a * 4 + 3] = Math.min(S.loadL[k], 1) * l[1];
-        const hd = Math.hypot(CX[c] - x, CY[c] - y);
-        ItM += L[a * 4 + 1]; ItL += L[a * 4 + 3]; if (hd <= MM.range && m[0] > bsm) { bsm = m[0]; bm = a; } if (hd <= LB.range && l[0] > bsl) { bsl = l[0]; bln = a; } });
-      const sM = bm >= 0 ? bsm / (ItM - L[bm * 4 + 1] + MM.noise) : 0, sL = bln >= 0 ? bsl / (ItL - L[bln * 4 + 3] + LB.noise) : 0;
-      const sinr = MM.B * seOf(sM, 5.5) >= LB.B * seOf(sL, 5.5) ? sM : sL, db = 10 * Math.log10(Math.max(sinr, 1e-6)), k = clamp((db + 5) / 35, 0, 1), col = ramp(k);
-      data[4 * c] = col.r * 255; data[4 * c + 1] = col.g * 255; data[4 * c + 2] = col.b * 255; data[4 * c + 3] = 60 + 150 * k;
+    for (let c = 0; c < NC; c++) { const db = 10 * Math.log10(Math.max(sinrAt(CX[c], CY[c], CH[c], act, sn), 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(data, 4 * c, k, 60 + 150 * k); }
+    for (let q = 0; q < FN; q++) {
+      if (!FIN[q]) { fd[4 * q + 3] = 0; continue; }
+      const db = 10 * Math.log10(Math.max(sinrAt(FXc[q], FYc[q], FCH[q], act, sn), 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(fd, 4 * q, k, 225);
     }
     $('lgHi').textContent = '30 dB'; $('lgMid').textContent = '12,5'; $('lgLo').textContent = '−5 dB';
   }
-  tex.needsUpdate = true;
+  tex.needsUpdate = true; ftex.needsUpdate = true;
 }
 function updateText() {
   const s0 = Math.min(Math.floor(t / STEP), NS - 2), f = t / STEP - s0, sn = Math.round(t / STEP);
