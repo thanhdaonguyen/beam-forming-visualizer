@@ -150,7 +150,7 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
     <section>
       <h2 id="bh-h">Backhaul</h2>
       <div class="seg" role="group" aria-labelledby="bh-h">
-        <button data-bh="hyb" aria-pressed="true"><span class="t">Lai</span><span class="d">UAV neo có cáp quang trong dây neo, UAV bay nối về UAV neo qua mmWave, LEO dự phòng</span></button>
+        <button data-bh="hyb" aria-pressed="true"><span class="t">Gateway mặt đất</span><span class="d">Mỗi UAV nối về 1 trong 4 trạm có cáp quang quanh sân qua E-band 10 Gbps, ngoài tầm 700 m thì dùng LEO</span></button>
         <button data-bh="leo" aria-pressed="false"><span class="t">Chỉ vệ tinh LEO</span><span class="d">Như giả định trong bài: mỗi UAV một terminal LEO</span></button>
       </div>
     </section>
@@ -161,7 +161,7 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
     </section>
 
     <div class="note">
-      <p>UAV neo: 26 GHz, 800 MHz, mảng 16×16, 4 búp. UAV bay: 3,5 GHz, 100 MHz, mảng 8×8, 4 búp. Kênh Al-Hourani đô thị, có suy hao do mái che khán đài A, B và do đám đông.</p>
+      <p>Mọi UAV đều bay tự do và mang hai radio: 26 GHz (800 MHz, mảng 16×16) và 3,5 GHz (100 MHz, mảng 8×8), mỗi radio 4 búp. UAV trong sân chỉ bay trên đường chạy, không bay trên đầu khán giả. Kênh Al-Hourani đô thị, có suy hao do mái che khán đài A, B và do đám đông.</p>
       <p>Vị trí bãi xe, điểm đón và khu chờ tài xế quanh sân là giả định, không theo bản đồ thực.</p>
     </div>
   </aside>
@@ -173,8 +173,9 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
       <div class="keyline" aria-hidden="true">
         <span><i style="background:var(--cobalt)"></i>Khán giả</span>
         <span><i style="background:var(--amber)"></i>Tài xế</span>
-        <span><i class="sq" style="background:var(--cobalt);opacity:.5"></i>Búp UAV neo (26 GHz)</span>
-        <span><i class="sq" style="background:var(--amber);opacity:.6"></i>Búp UAV bay (3,5 GHz)</span>
+        <span><i class="sq" style="background:var(--cobalt);opacity:.5"></i>Búp 26 GHz</span>
+        <span><i class="sq" style="background:var(--amber);opacity:.6"></i>Búp 3,5 GHz</span>
+        <span><i class="ln" style="display:inline-block;width:10px;height:2px;background:var(--cobalt);margin-right:7px;vertical-align:3px"></i>Backhaul</span>
         <span><i style="background:var(--danger)"></i>UAV quá tải</span>
       </div>
       <div class="tools"><button class="btn" id="reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Góc nhìn ban đầu</button></div>
@@ -211,6 +212,7 @@ const nf = (v, d = 0) => v.toLocaleString('vi-VN', { minimumFractionDigits: d, m
 const clock = m => { const tot = 960 + Math.round(m); return String(Math.floor(tot / 60) % 24).padStart(2, '0') + ':' + String(tot % 60).padStart(2, '0'); };
 const D2R = Math.PI / 180, C = 3e8;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // ---------- random ----------
 let _s = 20261106;
@@ -361,8 +363,8 @@ for (let k = 0; k < 800; k++) { const th = rnd() * 2 * Math.PI, p = se(U(40, 200
 // ---------- radio ----------
 const A_U = 9.61, B_U = 0.16, ETA_L = 1, ETA_N = 20;           // Al-Hourani, urban
 const N0 = Math.pow(10, -17.4);                                   // mW/Hz
-const MM = { f: 26e9, B: 800, P: Math.pow(10, 3.7), N: 16, L: 4, nf: Math.pow(10, 0.9), body: 3, roof: 30, ue: Math.pow(10, 3.1) };
-const LB = { f: 3.5e9, B: 100, P: Math.pow(10, 3.7), N: 8, L: 4, nf: Math.pow(10, 0.7), body: 1, roof: 15, ue: Math.pow(10, 2.3) };
+const MM = { f: 26e9, B: 800, P: Math.pow(10, 3.7), N: 16, L: 4, nf: Math.pow(10, 0.9), body: 3, roof: 30, wall: 40, ue: Math.pow(10, 3.1), thr: 0.5, range: 320 };
+const LB = { f: 3.5e9, B: 100, P: Math.pow(10, 3.7), N: 8, L: 4, nf: Math.pow(10, 0.7), body: 1, roof: 15, wall: 20, ue: Math.pow(10, 2.3), thr: 0.3, range: 650 };
 MM.noise = N0 * MM.B * 1e6 * MM.nf; LB.noise = N0 * LB.B * 1e6 * LB.nf;
 const ETA = 0.7;
 const elemDb = a => 8 - Math.min(12 * (a / 65) ** 2, 30);
@@ -370,68 +372,95 @@ function link(R, ux, uy, uh, c, extraDb) {
   const r = Math.hypot(CX[c] - ux, CY[c] - uy), h = Math.max(uh - CH[c], 1), d = Math.hypot(r, h);
   const th = Math.atan2(h, r) / D2R, pl = 1 / (1 + A_U * Math.exp(-B_U * (th - A_U)));
   const PLdb = 20 * Math.log10(4 * Math.PI * d * R.f / C) + ETA_L * pl + ETA_N * (1 - pl) + R.body + extraDb;
-  const e = elemDb(Math.atan2(r, h) / D2R), g = 1 / Math.pow(10, PLdb / 10);
+  const e = elemDb(Math.atan2(r, h) / D2R), g = Math.pow(10, -PLdb / 10);
   const gs = Math.pow(10, (e + 20 * Math.log10(R.N)) / 10), ga = Math.pow(10, e / 10);
-  return [R.P / R.L * gs * g, R.P * ga * g, R.ue * gs * g];   // serving DL, interference DL (avg beam), serving UL
+  return [R.P / R.L * gs * g, R.P * ga * g, R.ue * gs * g];   // serving DL, interference DL (average beam), serving UL
 }
 const seOf = (sinr, cap) => sinr < 0.1 ? 0 : Math.min(cap, 0.75 * Math.log2(1 + sinr));
-function blockSampled(ux, uy, uh, c) {
-  let loss = 0; const cx = CX[c], cy = CY[c];
-  for (let k = 1; k < 24; k++) {
-    const f = k / 24, px = ux + (cx - ux) * f, py = uy + (cy - uy) * f, z = uh + (CH[c] - uh) * f;
-    if (inOuter(px, py) && !inInner(px, py) && z < seatHeight(px, py) - 1) return 40;
-    if (underRoof(px, py) && z >= 30 && z <= 40) loss = 30;
-  }
-  return loss;
-}
-function roofCheck(R, ux, uy, uh, c) {
-  const cx = CX[c], cy = CY[c];
-  if (!underRoof(cx, cy)) return 0;
-  if (Math.sign(ux) === Math.sign(cx) && Math.abs(ux) >= 62) return R.roof;
-  const xe = 62 * Math.sign(cx), f = (xe - ux) / (cx - ux);
-  if (f < 0 || f > 1) return 0;
-  return uh + (CH[c] - uh) * f > 30 ? R.roof : 0;
-}
 
-// tethered UAVs: fixed over the track, anchored at ground level
-const TPOS = [[42, 38, 28], [42, -38, 28], [-42, 38, 28], [-42, -38, 28], [42, 0, 28], [-42, 0, 28], [0, 82, 55], [-34, -74, 50], [34, -74, 50], [-14, -62, 36], [14, -62, 36], [0, -104, 60]];
-const NT = TPOS.length, KMAX = 40;
-const TS = new Float32Array(NT * NC), TI = new Float32Array(NT * NC), TU = new Float32Array(NT * NC), TBEST = new Int8Array(NC);
-function precomputeTethered() {
-  for (let c = 0; c < NC; c++) CH[c] = inOuter(CX[c], CY[c]) && !inInner(CX[c], CY[c]) ? Math.max(seatHeight(CX[c], CY[c]), 1.5) : 1.5;
-  for (let c = 0; c < NC; c++) {
-    let best = -1, bs = 0;
-    for (let j = 0; j < NT; j++) {
-      const [ux, uy, uh] = TPOS[j], ex = blockSampled(ux, uy, uh, c);
-      const [s, i, u] = link(MM, ux, uy, uh, c, ex);
-      TS[j * NC + c] = s; TI[j * NC + c] = i; TU[j * NC + c] = u;
-      if (s > bs) { bs = s; best = j; }
-    }
-    TBEST[c] = best;
-  }
+// structure map: stand heights and roof footprint at 2.5 m
+const SX0 = -130, SY0 = -136, SR = 2.5, SW = 104, SHn = 109;
+const SHM = new Float32Array(SW * SHn), ROOF = new Uint8Array(SW * SHn);
+for (let j = 0; j < SHn; j++) for (let i = 0; i < SW; i++) {
+  const x = SX0 + (i + 0.5) * SR, y = SY0 + (j + 0.5) * SR, k = j * SW + i;
+  if (inOuter(x, y) && !inInner(x, y)) SHM[k] = Math.max(seatHeight(x, y), 0.5);
+  ROOF[k] = underRoof(x, y) ? 1 : 0;
 }
-function tetheredSE(c, loadT, seArr) {
-  let It = 0; for (let k = 0; k < NT; k++) It += Math.min(loadT[k], 1) * TI[k * NC + c];
-  let bj = TBEST[c], bsc = -1, bse = 0;
-  for (let j = 0; j < NT; j++) {
-    const se = seOf(TS[j * NC + c] / (It - Math.min(loadT[j], 1) * TI[j * NC + c] + MM.noise), 5.5);
-    if (seArr) seArr[j] = se;
-    if (se > bsc) { bsc = se; bj = j; bse = se; }
+for (let c = 0; c < NC; c++) CH[c] = inOuter(CX[c], CY[c]) && !inInner(CX[c], CY[c]) ? Math.max(seatHeight(CX[c], CY[c]), 1.5) : 1.5;
+// 0 = clear, 1 = through the roof, 2 = through the stand structure
+function blockType(ux, uy, uh, c) {
+  const cx = CX[c], cy = CY[c], ch = CH[c]; let t = 0;
+  for (let k = 1; k < 12; k++) {
+    const f = k / 12, i = Math.floor((ux + (cx - ux) * f - SX0) / SR), j = Math.floor((uy + (cy - uy) * f - SY0) / SR);
+    if (i < 0 || j < 0 || i >= SW || j >= SHn) continue;
+    const z = uh + (ch - uh) * f, q = j * SW + i;
+    if (SHM[q] > 0 && z < SHM[q] - 1.5) return 2;
+    if (ROOF[q] && z >= 30 && z <= 40) t = 1;
   }
-  return [bse, seOf(TU[bj * NC + c] / (2 * MM.noise), 4.5), bj];
+  return t;
 }
+const lossOf = (R, b) => b === 2 ? R.wall : b === 1 ? R.roof : 0;
+
+// ground gateways with fibre, wireless backhaul from each UAV (E-band, 10 Gbps)
+const GW = [[175, 175], [-175, 175], [-175, -175], [175, -175]];
+const BH_LINK = 10000, BH_GW = 40000, BH_RANGE = 700, LEO_DL = 250, LEO_UL = 30;
+const KMAX = 48, PLAN = 4800;     // planning capacity per UAV: ~60 % of 26 GHz + 3.5 GHz radios
 
 // ---------- simulation storage ----------
 const S = {
-  cellD: new Float32Array(NS * NC), loadT: new Float32Array(NS * NT), loadF: new Float32Array(NS * KMAX),
-  fpos: new Float32Array(NS * KMAX * 3), fact: new Uint8Array(NS * KMAX), beams: new Float32Array(NS * (NT + KMAX) * 8).fill(NaN),
+  cellD: new Float32Array(NS * NC), loadM: new Float32Array(NS * KMAX), loadL: new Float32Array(NS * KMAX),
+  upos: new Float32Array(NS * KMAX * 3), uact: new Uint8Array(NS * KMAX), utag: new Uint8Array(NS * KMAX), bhGw: new Int8Array(NS * KMAX),
+  beams: new Float32Array(NS * KMAX * 12).fill(NaN),
   Ddl: new Float32Array(NS), Dul: new Float32Array(NS), De: new Float32Array(NS), Du: new Float32Array(NS), Dm: new Float32Array(NS),
-  acc: new Float32Array(NS), hyb: new Float32Array(NS), leo: new Float32Array(NS), nF: new Float32Array(NS), maxLoad: new Float32Array(NS),
-  inside: new Float32Array(NS), outside: new Float32Array(NS), drivers: new Float32Array(NS)
+  acc: new Float32Array(NS), hyb: new Float32Array(NS), leo: new Float32Array(NS), nU: new Float32Array(NS), nB: new Float32Array(NS), nO: new Float32Array(NS),
+  maxLoad: new Float32Array(NS), inside: new Float32Array(NS), outside: new Float32Array(NS), drivers: new Float32Array(NS)
 };
-const fx = new Float64Array(KMAX), fy = new Float64Array(KMAX), fh = new Float64Array(KMAX).fill(100), fa = new Uint8Array(KMAX);
-let prevLoadT = new Float32Array(NT).fill(0.5), prevLoadF = new Float32Array(KMAX).fill(0.5);
+const ux = new Float64Array(KMAX), uy = new Float64Array(KMAX), uh = new Float64Array(KMAX).fill(100), ua = new Uint8Array(KMAX), utg = new Uint8Array(KMAX);
+let prevM = new Float32Array(KMAX).fill(0.5), prevL = new Float32Array(KMAX).fill(0.5);
 const dl = new Float32Array(NC), ul = new Float32Array(NC);
+
+function coverCount(list, R) {
+  const tot = list.reduce((a, c) => a + dl[c] + ul[c], 0); if (!tot) return 0;
+  const cov = new Uint8Array(list.length); let got = 0, k = 0;
+  while (got < 0.97 * tot && k < KMAX) {
+    let bq = -1, bv = 0;
+    for (let q = 0; q < list.length; q++) if (!cov[q]) { const v = dl[list[q]] + ul[list[q]]; if (v > bv) { bv = v; bq = q; } }
+    if (bq < 0) break; k++;
+    const x = CX[list[bq]], y = CY[list[bq]];
+    for (let q = 0; q < list.length; q++) if (!cov[q] && Math.hypot(CX[list[q]] - x, CY[list[q]] - y) <= R) { cov[q] = 1; got += dl[list[q]] + ul[list[q]]; }
+  }
+  return k;
+}
+// UAVs inside the bowl keep to the athletics track ring, never over the crowd
+function toTrack(u) { const th = Math.atan2(uy[u] / IN.b, ux[u] / IN.a), p = se(IN.a - 6, IN.b - 6, th); ux[u] = p[0]; uy[u] = p[1]; uh[u] = 28 + 17 * Math.sin(th) ** 2; }
+
+function placeRegion(tag, list, w, K) {
+  const n = list.length, mine = () => { const o = []; for (let u = 0; u < KMAX; u++) if (ua[u] && utg[u] === tag) o.push(u); return o; };
+  const asg = new Int16Array(n);
+  const assign = us => { for (let q = 0; q < n; q++) { let b = -1, bd = 1e18; for (const u of us) { const d = (CX[list[q]] - ux[u]) ** 2 + (CY[list[q]] - uy[u]) ** 2; if (d < bd) { bd = d; b = u; } } asg[q] = b; } };
+  let us = mine();
+  while (us.length < K) {
+    const u = ua.indexOf(0); if (u < 0) break;
+    let bq = -1, bv = -1;
+    for (let q = 0; q < n; q++) { let md = 1e12; for (const v of us) md = Math.min(md, (CX[list[q]] - ux[v]) ** 2 + (CY[list[q]] - uy[v]) ** 2); const v = w[q] * md; if (v > bv) { bv = v; bq = q; } }
+    ua[u] = 1; utg[u] = tag; uh[u] = tag ? 100 : 30;
+    if (bq >= 0) { ux[u] = CX[list[bq]]; uy[u] = CY[list[bq]]; } else { ux[u] = 0; uy[u] = 0; }
+    if (!tag) toTrack(u);
+    us = mine();
+  }
+  if (us.length > K) { assign(us); const wt = new Float64Array(KMAX); for (let q = 0; q < n; q++) if (asg[q] >= 0) wt[asg[q]] += w[q];
+    us.sort((a, b) => wt[a] - wt[b]); for (let k = 0; k < us.length - K; k++) ua[us[k]] = 0; us = mine(); }
+  if (!n || !us.length) return;
+  for (let it = 0; it < 5; it++) {
+    assign(us); const sx = new Float64Array(KMAX), sy = new Float64Array(KMAX), sw = new Float64Array(KMAX);
+    for (let q = 0; q < n; q++) { const u = asg[q]; sx[u] += w[q] * CX[list[q]]; sy[u] += w[q] * CY[list[q]]; sw[u] += w[q]; }
+    for (const u of us) if (sw[u] > 0) { ux[u] = clamp(sx[u] / sw[u], X0 + 20, X1 - 20); uy[u] = clamp(sy[u] / sw[u], Y0 + 20, Y1 - 20); if (!tag) toTrack(u); }
+  }
+  if (!tag) return;
+  assign(us); const sr = new Float64Array(KMAX), sw = new Float64Array(KMAX);
+  for (let q = 0; q < n; q++) { const u = asg[q]; sr[u] += w[q] * Math.hypot(CX[list[q]] - ux[u], CY[list[q]] - uy[u]); sw[u] += w[q]; }
+  for (const u of us) { const target = sw[u] > 0 ? clamp(1.2 * sr[u] / sw[u] + 40, 70, 140) : 100; uh[u] = 0.5 * uh[u] + 0.5 * target; }
+}
 
 function simStep(s) {
   const t = s * STEP; dl.fill(0); ul.fill(0);
@@ -444,99 +473,76 @@ function simStep(s) {
   }
   let Du = 0; const ufac = t >= 390 ? 1.3 : 1;
   for (let c = 0; c < NC; c++) if (INFRA_UL[c]) { ul[c] += INFRA_UL[c] * ufac; Du += INFRA_UL[c] * ufac; }
-  const cells = []; let Ddl = 0, Dul = 0;
-  for (let c = 0; c < NC; c++) { const v = dl[c] + ul[c]; S.cellD[s * NC + c] = v; if (v > 0) { cells.push(c); Ddl += dl[c]; Dul += ul[c]; } }
+  const cells = [], bowl = [], out = []; let Ddl = 0, Dul = 0, Db = 0, Do = 0;
+  for (let c = 0; c < NC; c++) { const v = dl[c] + ul[c]; S.cellD[s * NC + c] = v; if (v <= 0) continue;
+    cells.push(c); Ddl += dl[c]; Dul += ul[c]; if (inOuter(CX[c], CY[c])) { bowl.push(c); Db += v; } else { out.push(c); Do += v; } }
 
-  // residual demand that tethered UAVs (26 GHz) cannot carry well
-  const res = [], resW = [];
-  let resNeed = 0;
-  for (const c of cells) {
-    const [sd] = tetheredSE(c, prevLoadT);
-    if (sd < 0.5) { const w = (dl[c] / (LB.B * 2) + ul[c] / (LB.B * 1.2)) / (LB.L * ETA); res.push(c); resW.push(w); resNeed += w; }
-  }
-  // number of free-flying UAVs: keep planned utilisation at 70 %
-  const K = clamp(Math.ceil(resNeed / 0.7), 3, KMAX);
-  placeFree(res, resW, K);
+  // fleet size: capacity inside the bowl; coverage and capacity outside
+  let Kb = Db > 30 ? Math.ceil(Db / PLAN) : 0, Ko = Do > 30 ? Math.max(coverCount(out, 180), Math.ceil(Do / PLAN)) : 0;
+  Kb = Math.min(Kb, 24); Ko = Math.min(Ko, KMAX - Kb);
+  placeRegion(0, bowl, bowl.map(c => dl[c] + ul[c]), Kb);
+  placeRegion(1, out, out.map(c => Math.sqrt(dl[c] + ul[c])), Ko);
 
-  // association and load (two passes so interference reflects load)
-  const nC = cells.length, LF = new Float32Array(nC * KMAX * 3);
-  const act = []; for (let u = 0; u < KMAX; u++) if (fa[u]) act.push(u);
+  // link budgets for both radios on every UAV
+  const act = []; for (let u = 0; u < KMAX; u++) if (ua[u]) act.push(u);
+  const nC = cells.length, nA = act.length, LK = new Float32Array(nC * nA * 6);
   for (let q = 0; q < nC; q++) { const c = cells[q];
-    for (const u of act) { const r = link(LB, fx[u], fy[u], fh[u], c, roofCheck(LB, fx[u], fy[u], fh[u], c)); const o = (q * KMAX + u) * 3; LF[o] = r[0]; LF[o + 1] = r[1]; LF[o + 2] = r[2]; } }
-  let loadT = Float32Array.from(prevLoadT), loadF = Float32Array.from(prevLoadF);
-  const srv = new Int16Array(nC), need = new Float32Array(nC);
-  // greedy load balancing: largest cells first, each goes to the tethered UAV whose load grows least
+    for (let a = 0; a < nA; a++) { const u = act[a], b = blockType(ux[u], uy[u], uh[u], c), o = (q * nA + a) * 6;
+      const m = link(MM, ux[u], uy[u], uh[u], c, lossOf(MM, b)), l = link(LB, ux[u], uy[u], uh[u], c, lossOf(LB, b));
+      const hd = Math.hypot(CX[c] - ux[u], CY[c] - uy[u]);
+      LK[o] = hd <= MM.range ? m[0] : 0; LK[o + 1] = m[1]; LK[o + 2] = m[2]; LK[o + 3] = hd <= LB.range ? l[0] : 0; LK[o + 4] = l[1]; LK[o + 5] = l[2]; } }
+
+  // association: largest cells first, each to the radio whose load grows least
   const order = Array.from({ length: nC }, (_, q) => q).sort((a, b) => (dl[cells[b]] + ul[cells[b]]) - (dl[cells[a]] + ul[cells[a]]));
-  const seT = new Float32Array(NT);
+  let lM = Float32Array.from(prevM), lL = Float32Array.from(prevL);
+  const srvU = new Int16Array(nC).fill(-1), srvB = new Uint8Array(nC);
   for (let pass = 0; pass < 3; pass++) {
-    const nT = new Float32Array(NT), nFv = new Float32Array(KMAX);
+    const nM = new Float32Array(KMAX), nL = new Float32Array(KMAX);
     for (const q of order) {
-      const c = cells[q]; tetheredSE(c, loadT, seT);
-      let j = -1, bl = 1e18, sdT = 0;
-      for (let k = 0; k < NT; k++) { if (seT[k] < 0.5) continue; const l = nT[k] + (dl[c] + ul[c]) / (MM.B * seT[k] * MM.L * ETA); if (l < bl) { bl = l; j = k; sdT = seT[k]; } }
-      const suT = j >= 0 ? seOf(TU[j * NC + c] / (2 * MM.noise), 4.5) : 0;
-      let bu = -1, bs = 0; for (const u of act) { const v = LF[(q * KMAX + u) * 3]; if (v > bs) { bs = v; bu = u; } }
-      let sdF = 0, suF = 0;
-      if (bu >= 0) { let I = 0; for (const u of act) if (u !== bu) I += Math.min(loadF[u], 1) * LF[(q * KMAX + u) * 3 + 1];
-        sdF = seOf(bs / (I + LB.noise), 5.5); suF = seOf(LF[(q * KMAX + bu) * 3 + 2] / (2 * LB.noise), 4.5); }
-      if (j >= 0 && sdT > 0 && MM.B * sdT >= LB.B * sdF) { const n = (dl[c] / (MM.B * sdT) + ul[c] / (MM.B * Math.max(suT, 0.1))) / (MM.L * ETA); nT[j] += n; srv[q] = j; need[q] = n; }
-      else if (sdF > 0) { const n = (dl[c] / (LB.B * sdF) + ul[c] / (LB.B * Math.max(suF, 0.1))) / (LB.L * ETA); nFv[bu] += n; srv[q] = NT + bu; need[q] = n; }
-      else { srv[q] = -1; need[q] = 0; }
+      const c = cells[q], base = q * nA * 6; let ItM = 0, ItL = 0;
+      for (let a = 0; a < nA; a++) { ItM += Math.min(lM[act[a]], 1) * LK[base + a * 6 + 1]; ItL += Math.min(lL[act[a]], 1) * LK[base + a * 6 + 4]; }
+      let best = -1, bb = 0, bl = 1e18, bn = 0;
+      for (let a = 0; a < nA; a++) {
+        const u = act[a], o = base + a * 6;
+        const sM = seOf(LK[o] / (ItM - Math.min(lM[u], 1) * LK[o + 1] + MM.noise), 5.5);
+        if (sM >= MM.thr) { const n = (dl[c] / (MM.B * sM) + ul[c] / (MM.B * Math.max(seOf(LK[o + 2] / (2 * MM.noise), 4.5), 0.1))) / (MM.L * ETA); if (nM[u] + n < bl) { bl = nM[u] + n; best = u; bb = 0; bn = n; } }
+        const sL = seOf(LK[o + 3] / (ItL - Math.min(lL[u], 1) * LK[o + 4] + LB.noise), 5.5);
+        if (sL >= LB.thr) { const n = (dl[c] / (LB.B * sL) + ul[c] / (LB.B * Math.max(seOf(LK[o + 5] / (2 * LB.noise), 4.5), 0.1))) / (LB.L * ETA); if (nL[u] + n < bl) { bl = nL[u] + n; best = u; bb = 1; bn = n; } }
+      }
+      srvU[q] = best; srvB[q] = bb; if (best >= 0) (bb ? nL : nM)[best] += bn;
     }
-    loadT = nT; loadF = nFv;
+    lM = nM; lL = nL;
   }
-  prevLoadT = Float32Array.from(loadT, v => Math.max(v, 0.05)); prevLoadF = Float32Array.from(loadF, v => Math.max(v, 0.05));
+  prevM = Float32Array.from(lM, v => Math.max(v, 0.05)); prevL = Float32Array.from(lL, v => Math.max(v, 0.05));
 
   // served traffic per UAV, then backhaul
-  const accDl = new Float32Array(NT + KMAX), accUl = new Float32Array(NT + KMAX);
-  for (let q = 0; q < nC; q++) { const v = srv[q]; if (v < 0) continue; const ld = v < NT ? loadT[v] : loadF[v - NT], f = ld > 1 ? 1 / ld : 1;
-    accDl[v] += dl[cells[q]] * f; accUl[v] += ul[cells[q]] * f; }
-  let acc = 0, hyb = 0, leo = 0; const iabDl = new Float32Array(NT), iabUl = new Float32Array(NT);
-  for (let v = 0; v < NT + KMAX; v++) { acc += accDl[v] + accUl[v]; leo += Math.min(accDl[v], 250) + Math.min(accUl[v], 30); }
-  for (const u of act) { const v = NT + u; let bj = -1, bd = 600;
-    TPOS.forEach((p, j) => { const d = Math.hypot(p[0] - fx[u], p[1] - fy[u]); if (d < bd) { bd = d; bj = j; } });
-    if (bj >= 0) { const tot = accDl[v] + accUl[v], sc = tot > 2000 ? 2000 / tot : 1; iabDl[bj] += accDl[v] * sc; iabUl[bj] += accUl[v] * sc; }
-    else hyb += Math.min(accDl[v], 250) + Math.min(accUl[v], 30); }
-  for (let j = 0; j < NT; j++) hyb += Math.min(accDl[j] + iabDl[j], 10000) + Math.min(accUl[j] + iabUl[j], 10000);
+  const accDl = new Float32Array(KMAX), accUl = new Float32Array(KMAX);
+  for (let q = 0; q < nC; q++) { const u = srvU[q]; if (u < 0) continue; const ld = srvB[q] ? lL[u] : lM[u], f = ld > 1 ? 1 / ld : 1;
+    accDl[u] += dl[cells[q]] * f; accUl[u] += ul[cells[q]] * f; }
+  let acc = 0, hyb = 0, leo = 0; const gwIn = new Float32Array(GW.length);
+  for (const u of act) {
+    const a = accDl[u] + accUl[u], viaLeo = Math.min(accDl[u], LEO_DL) + Math.min(accUl[u], LEO_UL);
+    acc += a; leo += viaLeo;
+    let g = -1, bd = BH_RANGE; GW.forEach((p, k) => { const d = Math.hypot(p[0] - ux[u], p[1] - uy[u]); if (d < bd) { bd = d; g = k; } });
+    S.bhGw[s * KMAX + u] = g;
+    if (g >= 0) gwIn[g] += Math.min(a, BH_LINK); else hyb += viaLeo;
+  }
+  for (let g = 0; g < GW.length; g++) hyb += Math.min(gwIn[g], BH_GW);
 
-  // beams: up to four strongest-demand cells per UAV, at least 50 m apart
-  const per = Array.from({ length: NT + KMAX }, () => []);
-  for (let q = 0; q < nC; q++) if (srv[q] >= 0) per[srv[q]].push(cells[q]);
-  per.forEach((list, v) => { list.sort((a, b) => S.cellD[s * NC + b] - S.cellD[s * NC + a]); const pickd = [];
-    for (const c of list) { if (pickd.length >= 4) break; if (pickd.every(p => Math.hypot(CX[p] - CX[c], CY[p] - CY[c]) >= 50)) pickd.push(c); }
-    pickd.forEach((c, b) => { const o = ((s * (NT + KMAX) + v) * 4 + b) * 2; S.beams[o] = CX[c]; S.beams[o + 1] = CY[c]; }); });
+  // beams: four strongest-demand cells per UAV, at least 50 m apart
+  const per = Array.from({ length: KMAX }, () => []);
+  for (let q = 0; q < nC; q++) if (srvU[q] >= 0) per[srvU[q]].push(q);
+  per.forEach((list, u) => { list.sort((a, b) => (dl[cells[b]] + ul[cells[b]]) - (dl[cells[a]] + ul[cells[a]])); const pk = [];
+    for (const q of list) { if (pk.length >= 4) break; const c = cells[q]; if (pk.every(p => Math.hypot(CX[cells[p]] - CX[c], CY[cells[p]] - CY[c]) >= 50)) pk.push(q); }
+    pk.forEach((q, b) => { const o = ((s * KMAX + u) * 4 + b) * 3; S.beams[o] = CX[cells[q]]; S.beams[o + 1] = CY[cells[q]]; S.beams[o + 2] = srvB[q]; }); });
 
-  let mx = 0;
-  for (let j = 0; j < NT; j++) { S.loadT[s * NT + j] = loadT[j]; mx = Math.max(mx, loadT[j]); }
-  for (let u = 0; u < KMAX; u++) { const o = s * KMAX + u; S.fact[o] = fa[u]; S.loadF[o] = loadF[u]; S.fpos[o * 3] = fx[u]; S.fpos[o * 3 + 1] = fy[u]; S.fpos[o * 3 + 2] = fh[u]; if (fa[u]) mx = Math.max(mx, loadF[u]); }
+  let mx = 0, nB = 0;
+  for (let u = 0; u < KMAX; u++) { const o = s * KMAX + u; S.uact[o] = ua[u]; S.utag[o] = utg[u]; S.loadM[o] = lM[u]; S.loadL[o] = lL[u];
+    S.upos[o * 3] = ux[u]; S.upos[o * 3 + 1] = uy[u]; S.upos[o * 3 + 2] = uh[u];
+    if (ua[u]) { mx = Math.max(mx, lM[u], lL[u]); if (!utg[u]) nB++; } }
   S.Ddl[s] = Ddl; S.Dul[s] = Dul; S.De[s] = De; S.Du[s] = Du; S.Dm[s] = Dm;
-  S.acc[s] = acc; S.hyb[s] = hyb; S.leo[s] = leo; S.nF[s] = act.length; S.maxLoad[s] = mx;
+  S.acc[s] = acc; S.hyb[s] = hyb; S.leo[s] = leo; S.nU[s] = nA; S.nB[s] = nB; S.nO[s] = nA - nB; S.maxLoad[s] = mx;
   S.inside[s] = inside; S.outside[s] = outside; S.drivers[s] = drivers;
-}
-
-function placeFree(res, w, K) {
-  const n = res.length, asg = new Int16Array(n);
-  const assign = () => { for (let q = 0; q < n; q++) { let b = -1, bd = 1e18; for (let u = 0; u < KMAX; u++) if (fa[u]) { const d = (CX[res[q]] - fx[u]) ** 2 + (CY[res[q]] - fy[u]) ** 2; if (d < bd) { bd = d; b = u; } } asg[q] = b; } };
-  let A = fa.reduce((a, b) => a + b, 0);
-  while (A < K) {
-    let bq = -1, bv = -1;
-    for (let q = 0; q < n; q++) { let md = 1e12; for (let u = 0; u < KMAX; u++) if (fa[u]) md = Math.min(md, (CX[res[q]] - fx[u]) ** 2 + (CY[res[q]] - fy[u]) ** 2); const v = w[q] * md; if (v > bv) { bv = v; bq = q; } }
-    const u = fa.indexOf(0); fa[u] = 1; fh[u] = 100;
-    if (bq >= 0) { fx[u] = CX[res[bq]]; fy[u] = CY[res[bq]]; } else { fx[u] = U(-300, 300); fy[u] = U(-300, 300); }
-    A++;
-  }
-  if (A > K) { assign(); const wt = new Float64Array(KMAX); for (let q = 0; q < n; q++) if (asg[q] >= 0) wt[asg[q]] += w[q];
-    const order = []; for (let u = 0; u < KMAX; u++) if (fa[u]) order.push(u); order.sort((a, b) => wt[a] - wt[b]);
-    for (let k = 0; k < A - K; k++) fa[order[k]] = 0; }
-  if (!n) return;
-  for (let it = 0; it < 5; it++) {
-    assign(); const sx = new Float64Array(KMAX), sy = new Float64Array(KMAX), sw = new Float64Array(KMAX);
-    for (let q = 0; q < n; q++) { const u = asg[q]; sx[u] += w[q] * CX[res[q]]; sy[u] += w[q] * CY[res[q]]; sw[u] += w[q]; }
-    for (let u = 0; u < KMAX; u++) if (fa[u] && sw[u] > 0) { fx[u] = clamp(sx[u] / sw[u], X0 + 20, X1 - 20); fy[u] = clamp(sy[u] / sw[u], Y0 + 20, Y1 - 20); }
-  }
-  assign(); const sr = new Float64Array(KMAX), sw = new Float64Array(KMAX);
-  for (let q = 0; q < n; q++) { const u = asg[q]; sr[u] += w[q] * Math.hypot(CX[res[q]] - fx[u], CY[res[q]] - fy[u]); sw[u] += w[q]; }
-  for (let u = 0; u < KMAX; u++) if (fa[u]) { const target = sw[u] > 0 ? clamp(1.2 * sr[u] / sw[u] + 40, 70, 140) : 100; fh[u] = 0.5 * fh[u] + 0.5 * target; }
 }
 
 // ---------- scene ----------
@@ -591,34 +597,37 @@ const overlay = planeRect(X0, X1, Y0, Y1, 1.2, new THREE.MeshBasicMaterial({ map
 function pointsLayer(n, size) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3)); const m = new THREE.PointsMaterial({ size, sizeAttenuation: false }); const p = new THREE.Points(g, m); p.frustumCulled = false; scene.add(p); return p; }
 const ptsA = pointsLayer(NA, 2), ptsD = pointsLayer(ND, 2.6);
 
-// UAVs
+// UAVs, gateways and backhaul links
 const bodyG = new THREE.BoxGeometry(1.2, 0.35, 1.2), armG = new THREE.BoxGeometry(2.6, 0.12, 0.18), rotG = new THREE.CylinderGeometry(0.75, 0.75, 0.05, 20), panelG = new THREE.BoxGeometry(1.1, 0.12, 1.1);
-mat('rotor', { transparent: true, opacity: 0.35 });
+mat('rotor', { transparent: true, opacity: 0.35 }); mat('gw', { roughness: 0.6 });
 function makeUAV() {
   const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ roughness: 0.6 });
   g.add(new THREE.Mesh(bodyG, m));
   for (const r of [Math.PI / 4, -Math.PI / 4]) { const a = new THREE.Mesh(armG, m); a.rotation.y = r; g.add(a); }
   for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) { const rt = new THREE.Mesh(rotG, mats.rotor); rt.position.set(sx * 0.95, 0.25, sz * 0.95); g.add(rt); }
   const pn = new THREE.Mesh(panelG, mats.stage); pn.position.y = -0.3; g.add(pn);
-  g.userData.m = m; scene.add(g); return g;
+  g.userData.m = m; g.visible = false; scene.add(g); return g;
 }
-const uT = TPOS.map(p => { const g = makeUAV(); g.position.copy(V(p[0], p[1], p[2])); return g; });
-const tetherMat = new THREE.LineBasicMaterial();
-TPOS.forEach(p => scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(p[0], p[1], 0), V(p[0], p[1], p[2])]), tetherMat)));
-const uF = Array.from({ length: KMAX }, makeUAV);
+const uavs = Array.from({ length: KMAX }, makeUAV);
+GW.forEach(p => {
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.25, 2.5, 8), mats.gw); mast.position.copy(V(p[0], p[1], 12.5)); scene.add(mast);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.8), mats.gw); head.position.copy(V(p[0], p[1], 25)); scene.add(head);
+});
 const coneG = new THREE.CylinderGeometry(0.02, 1, 1, 24, 1, true); coneG.translate(0, -0.5, 0);
-const beamMatT = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide });
-const beamMatF = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
-const cones = Array.from({ length: (NT + KMAX) * 4 }, (_, i) => { const m = new THREE.Mesh(coneG, i < NT * 4 ? beamMatT : beamMatF); m.visible = false; scene.add(m); return m; });
+const beamMatM = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.16, depthWrite: false, side: THREE.DoubleSide });
+const beamMatL = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide });
+const cones = Array.from({ length: KMAX * 4 }, () => { const m = new THREE.Mesh(coneG, beamMatM); m.visible = false; scene.add(m); return m; });
+const bhMat = new THREE.LineDashedMaterial({ dashSize: 0.6, gapSize: 0.45, transparent: true, opacity: 0.75 });
+const bhLines = Array.from({ length: KMAX }, () => { const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), bhMat); l.visible = false; l.frustumCulled = false; scene.add(l); return l; });
 
 // ---------- theme ----------
 let R0, R1, R2;
 function theme() {
   for (const k of ['ground', 'road', 'lot', 'plaza', 'track', 'pitch']) mats[k].color.set(cssv('--' + k));
   mats.standMesh.color.set(cssv('--stand')); mats.roof.color.set(cssv('--roof')); mats.arch.color.set(cssv('--arch')); mats.stage.color.set(cssv('--body'));
-  mats.rotor.color.set(cssv('--body')); tetherMat.color.set(cssv('--guide'));
+  mats.rotor.color.set(cssv('--body')); mats.gw.color.set(cssv('--body')); bhMat.color.set(cssv('--cobalt'));
   ptsA.material.color.set(cssv('--cobalt')); ptsD.material.color.set(cssv('--amber'));
-  beamMatT.color.set(cssv('--cobalt')); beamMatF.color.set(cssv('--amber'));
+  beamMatM.color.set(cssv('--cobalt')); beamMatL.color.set(cssv('--amber'));
   COL.danger = cssv('--danger'); COL.amber = cssv('--amber'); COL.body = cssv('--body');
   R0 = new THREE.Color(cssv('--ramp-0')); R1 = new THREE.Color(cssv('--ramp-1')); R2 = new THREE.Color(cssv('--ramp-2'));
   lastMapStep = -1; drawChart();
@@ -631,7 +640,7 @@ const labels = $('labels');
 const LBL = [['Khán đài A', 98, 0, 42, 1], ['Khán đài B', -98, 0, 42, 1], ['Khán đài D', 0, 112, 14, 1], ['Sân khấu', 0, -66, 24, 1], ['Khu đứng', 0, 10, 3, 0],
   ['Đường Lê Đức Thọ', 315, -470, 0, 0], ['Bãi xe máy', -265, 235, 0, 0], ['Bãi xe máy', -265, -235, 0, 0], ['Bãi xe máy', 240, 250, 0, 0], ['Bãi xe máy', 0, -290, 0, 0],
   ['Điểm đón xe', 270, 0, 0, 0], ['Điểm đón xe', 0, 318, 0, 0], ['Điểm đón xe', -335, 0, 0, 0],
-  ['Khu chờ tài xế', 408, 0, 0, 0], ['Khu chờ tài xế', 0, 428, 0, 0], ['Khu chờ tài xế', -440, 0, 0, 0], ['Khu chờ tài xế', 0, -442, 0, 0], ['Bãi cất cánh UAV', DEPOT[0], DEPOT[1] - 30, 0, 0]]
+  ['Khu chờ tài xế', 408, 0, 0, 0], ['Khu chờ tài xế', 0, 428, 0, 0], ['Khu chờ tài xế', -440, 0, 0, 0], ['Khu chờ tài xế', 0, -442, 0, 0], ['Bãi cất cánh UAV', DEPOT[0], DEPOT[1] - 30, 0, 0], ['Gateway', 175, 175, 32, 0], ['Gateway', -175, 175, 32, 0], ['Gateway', -175, -175, 32, 0], ['Gateway', 175, -175, 32, 0]]
   .map(([t, x, y, z, s]) => { const d = document.createElement('div'); d.className = 'tag' + (s ? ' strong' : ''); d.textContent = t; labels.appendChild(d); return { d, v: V(x, y, z) }; });
 
 // ---------- camera ----------
@@ -674,30 +683,31 @@ const COL = {};
 const loadColor = (m, ld) => m.color.set(ld > 1.001 ? COL.danger : ld > 0.8 ? COL.amber : COL.body);
 function updateUAVs() {
   const s0 = Math.min(Math.floor(t / STEP), NS - 2), f = t / STEP - s0, sn = Math.round(t / STEP);
-  TPOS.forEach((p, j) => loadColor(uT[j].userData.m, S.loadT[sn * NT + j]));
-  const pos = [];
-  for (let u = 0; u < KMAX; u++) {
-    const a0 = S.fact[s0 * KMAX + u], a1 = S.fact[(s0 + 1) * KMAX + u], o0 = (s0 * KMAX + u) * 3, o1 = ((s0 + 1) * KMAX + u) * 3;
-    const g = uF[u]; g.visible = !!(a0 || a1);
-    if (!g.visible) { pos.push(null); continue; }
-    const p0 = a0 ? [S.fpos[o0], S.fpos[o0 + 1], S.fpos[o0 + 2]] : [DEPOT[0], DEPOT[1], 5], p1 = a1 ? [S.fpos[o1], S.fpos[o1 + 1], S.fpos[o1 + 2]] : [DEPOT[0], DEPOT[1], 5];
-    const q = [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f, p0[2] + (p1[2] - p0[2]) * f];
-    g.position.copy(V(q[0], q[1], q[2])); pos.push(q);
-    loadColor(g.userData.m, S.fact[sn * KMAX + u] ? S.loadF[sn * KMAX + u] : 0);
-  }
-  // beams
   let ci = 0;
-  for (let v = 0; v < NT + KMAX; v++) {
-    const src = v < NT ? TPOS[v] : pos[v - NT], on = layer.beams && src && (v < NT || S.fact[sn * KMAX + v - NT]);
-    for (let b = 0; b < 4; b++, ci++) {
-      const m = cones[ci], o = ((sn * (NT + KMAX) + v) * 4 + b) * 2, tx = S.beams[o], ty = S.beams[o + 1];
-      if (!on || isNaN(tx)) { m.visible = false; continue; }
-      const from = V(src[0], src[1], src[2] - 3), to = V(tx, ty, 1.5), dir = to.clone().sub(from), len = dir.length();
-      const hp = (102 / (v < NT ? MM.N : LB.N)) * D2R, r = Math.max(len * Math.tan(hp / 2), 0.8);
+  for (let u = 0; u < KMAX; u++) {
+    const a0 = S.uact[s0 * KMAX + u], a1 = S.uact[(s0 + 1) * KMAX + u], o0 = (s0 * KMAX + u) * 3, o1 = ((s0 + 1) * KMAX + u) * 3, g = uavs[u], bl = bhLines[u];
+    g.visible = !!(a0 || a1);
+    if (!g.visible) { bl.visible = false; for (let b = 0; b < 4; b++) cones[ci++].visible = false; continue; }
+    const p0 = a0 ? [S.upos[o0], S.upos[o0 + 1], S.upos[o0 + 2]] : [DEPOT[0], DEPOT[1], 5], p1 = a1 ? [S.upos[o1], S.upos[o1 + 1], S.upos[o1 + 2]] : [DEPOT[0], DEPOT[1], 5];
+    const q = [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f, p0[2] + (p1[2] - p0[2]) * f];
+    g.position.copy(V(q[0], q[1], q[2]));
+    const on = S.uact[sn * KMAX + u], k = sn * KMAX + u;
+    loadColor(g.userData.m, on ? Math.max(S.loadM[k], S.loadL[k]) : 0);
+    const gi = S.bhGw[k];
+    if (on && layer.beams) {
+      const to = bh === 'hyb' && gi >= 0 ? V(GW[gi][0], GW[gi][1], 25) : V(q[0], q[1], q[2] + 70);
+      bl.geometry.setFromPoints([V(q[0], q[1], q[2] + 2), to]); bl.computeLineDistances(); bl.visible = true;
+    } else bl.visible = false;
+    for (let b = 0; b < 4; b++) {
+      const m = cones[ci++], o = (k * 4 + b) * 3, tx = S.beams[o], ty = S.beams[o + 1], band = S.beams[o + 2];
+      if (!on || !layer.beams || isNaN(tx)) { m.visible = false; continue; }
+      m.material = band ? beamMatL : beamMatM;
+      const from = V(q[0], q[1], q[2] - 3), to = V(tx, ty, CH[cellOf(tx, ty)] + 1), dir = to.clone().sub(from), len = dir.length();
+      const hp = (102 / (band ? LB.N : MM.N)) * D2R, r = Math.max(len * Math.tan(hp / 2), 0.8);
       m.position.copy(from); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.normalize()); m.scale.set(r, len, r); m.visible = true;
     }
   }
-  for (const g of uT.concat(uF)) g.children.forEach((c, k) => { if (k >= 3 && k <= 6) c.rotation.y += 0.5; });
+  if (!reduced) for (const g of uavs) if (g.visible) g.children.forEach((c, k) => { if (k >= 3 && k <= 6) c.rotation.y += 0.5; });
 }
 function updateMap() {
   const sn = Math.round(t / STEP); if (sn === lastMapStep) return; lastMapStep = sn;
@@ -706,19 +716,21 @@ function updateMap() {
   const data = tex.image.data;
   if (mapMode === 'demand') {
     const base = sn * NC;
-    for (let c = 0; c < NC; c++) { const v = S.cellD[base + c], k = v > 0 ? clamp((Math.log10(v) - 0) / 3, 0, 1) : 0, col = ramp(k);
+    for (let c = 0; c < NC; c++) { const v = S.cellD[base + c], k = v > 0 ? clamp(Math.log10(v) / 3, 0, 1) : 0, col = ramp(k);
       data[4 * c] = col.r * 255; data[4 * c + 1] = col.g * 255; data[4 * c + 2] = col.b * 255; data[4 * c + 3] = v > 0.5 ? 70 + 160 * k : 0; }
     $('lgHi').textContent = '≥ 1 Gbps/ô'; $('lgMid').textContent = '30 Mbps'; $('lgLo').textContent = '1 Mbps';
   } else {
-    const lt = S.loadT.subarray(sn * NT, sn * NT + NT), act = [];
-    for (let u = 0; u < KMAX; u++) if (S.fact[sn * KMAX + u]) act.push(u);
+    const act = []; for (let u = 0; u < KMAX; u++) if (S.uact[sn * KMAX + u]) act.push(u);
+    const L = new Float32Array(act.length * 4);
     for (let c = 0; c < NC; c++) {
-      const j = TBEST[c]; let I = 0; for (let k = 0; k < NT; k++) if (k !== j) I += Math.min(lt[k], 1) * TI[k * NC + c];
-      const sT = TS[j * NC + c] / (I + MM.noise), rT = MM.B * seOf(sT, 5.5);
-      let bs = 0, bu = -1; const L = [];
-      for (const u of act) { const o = (sn * KMAX + u) * 3, r = link(LB, S.fpos[o], S.fpos[o + 1], S.fpos[o + 2], c, roofCheck(LB, S.fpos[o], S.fpos[o + 1], S.fpos[o + 2], c)); L.push([u, r]); if (r[0] > bs) { bs = r[0]; bu = u; } }
-      let sF = 0; if (bu >= 0) { let I2 = 0; for (const [u, r] of L) if (u !== bu) I2 += Math.min(S.loadF[sn * KMAX + u], 1) * r[1]; sF = bs / (I2 + LB.noise); }
-      const sinr = rT >= LB.B * seOf(sF, 5.5) ? sT : sF, db = 10 * Math.log10(Math.max(sinr, 1e-6)), k = clamp((db + 5) / 35, 0, 1), col = ramp(k);
+      let ItM = 0, ItL = 0, bm = -1, bsm = 0, bln = -1, bsl = 0;
+      act.forEach((u, a) => { const o = (sn * KMAX + u) * 3, x = S.upos[o], y = S.upos[o + 1], h = S.upos[o + 2], b = blockType(x, y, h, c);
+        const m = link(MM, x, y, h, c, lossOf(MM, b)), l = link(LB, x, y, h, c, lossOf(LB, b)), k = sn * KMAX + u;
+        L[a * 4] = m[0]; L[a * 4 + 1] = Math.min(S.loadM[k], 1) * m[1]; L[a * 4 + 2] = l[0]; L[a * 4 + 3] = Math.min(S.loadL[k], 1) * l[1];
+        const hd = Math.hypot(CX[c] - x, CY[c] - y);
+        ItM += L[a * 4 + 1]; ItL += L[a * 4 + 3]; if (hd <= MM.range && m[0] > bsm) { bsm = m[0]; bm = a; } if (hd <= LB.range && l[0] > bsl) { bsl = l[0]; bln = a; } });
+      const sM = bm >= 0 ? bsm / (ItM - L[bm * 4 + 1] + MM.noise) : 0, sL = bln >= 0 ? bsl / (ItL - L[bln * 4 + 3] + LB.noise) : 0;
+      const sinr = MM.B * seOf(sM, 5.5) >= LB.B * seOf(sL, 5.5) ? sM : sL, db = 10 * Math.log10(Math.max(sinr, 1e-6)), k = clamp((db + 5) / 35, 0, 1), col = ramp(k);
       data[4 * c] = col.r * 255; data[4 * c + 1] = col.g * 255; data[4 * c + 2] = col.b * 255; data[4 * c + 3] = 60 + 150 * k;
     }
     $('lgHi').textContent = '30 dB'; $('lgMid').textContent = '12,5'; $('lgLo').textContent = '−5 dB';
@@ -733,7 +745,7 @@ function updateText() {
   $('k-ppl').innerHTML = nf(Math.round(lerpS(S.inside, s0, f) / 100) * 100) + '<small>/ ' + nf(Math.round(lerpS(S.outside, s0, f) / 100) * 100) + '</small>';
   $('k-drv').textContent = nf(Math.round(lerpS(S.drivers, s0, f) / 10) * 10);
   $('k-dem').innerHTML = nf(lerpS(S.Ddl, s0, f) / 1000, 1) + '<small>/</small> ' + nf(lerpS(S.Dul, s0, f) / 1000, 1) + '<small>Gbps</small>';
-  $('k-uav').innerHTML = nf(NT + S.nF[sn]) + '<small>' + NT + ' neo, ' + S.nF[sn] + ' bay</small>';
+  $('k-uav').innerHTML = nf(S.nU[sn]) + '<small>' + S.nB[sn] + ' trong sân, ' + S.nO[sn] + ' ngoài</small>';
   const ml = S.maxLoad[sn]; $('k-load').innerHTML = nf(Math.min(ml, 9.99) * 100) + '<small>%</small>'; $('k-load').classList.toggle('warn', ml > 1);
   const D = lerpS(S.Ddl, s0, f) + lerpS(S.Dul, s0, f), sv = lerpS(bh === 'hyb' ? S.hyb : S.leo, s0, f), pct = D > 0 ? sv / D * 100 : 100;
   $('k-srv').innerHTML = nf(Math.min(pct, 100)) + '<small>% · ' + nf(sv / 1000, 1) + ' Gbps</small>'; $('k-srv').classList.toggle('warn', pct < 90);
@@ -769,7 +781,7 @@ function drawChart() {
   }
   const sv = bh === 'hyb' ? S.hyb : S.leo;
   tctx.beginPath(); for (let s = 0; s < NS; s++) tctx.lineTo(xs(s * STEP), ys(sv[s] / 1000)); tctx.strokeStyle = cssv('--ink'); tctx.lineWidth = 1.6; tctx.stroke();
-  tctx.beginPath(); for (let s = 0; s < NS; s++) { const n = NT + S.nF[s]; if (s) tctx.lineTo(xs(s * STEP), yu(NT + S.nF[s - 1])); tctx.lineTo(xs(s * STEP), yu(n)); }
+  tctx.beginPath(); for (let s = 0; s < NS; s++) { const n = S.nU[s]; if (s) tctx.lineTo(xs(s * STEP), yu(S.nU[s - 1])); tctx.lineTo(xs(s * STEP), yu(n)); }
   tctx.strokeStyle = cssv('--cobalt'); tctx.lineWidth = 1.2; tctx.setLineDash([4, 3]); tctx.stroke(); tctx.setLineDash([]);
   tctx.fillStyle = muted; tctx.textBaseline = 'middle'; tctx.textAlign = 'right';
   for (const g of [0, yMax / 2, yMax]) tctx.fillText(nf(g), L - 6, ys(g));
@@ -795,27 +807,29 @@ $('play').onclick = () => { if (t >= T_END) t = 0; setPlay(!playing); };
 document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { speed = +b.dataset.sp; document.querySelectorAll('[data-sp]').forEach(x => x.setAttribute('aria-pressed', x === b)); });
 document.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => { const k = b.dataset.layer; layer[k] = !layer[k]; b.setAttribute('aria-pressed', layer[k]);
   ptsA.visible = ptsD.visible = layer.people; lastT = -1; });
-document.querySelectorAll('[data-map]').forEach(b => b.onclick = () => { mapMode = b.dataset.map; document.querySelectorAll('[data-map]').forEach(x => x.setAttribute('aria-pressed', x === b)); lastMapStep = -1; });
+document.querySelectorAll('[data-map]').forEach(b => b.onclick = () => { mapMode = b.dataset.map; document.querySelectorAll('[data-map]').forEach(x => x.setAttribute('aria-pressed', x === b)); lastMapStep = -1; lastT = -1; });
 document.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { bh = b.dataset.bh; document.querySelectorAll('[data-bh]').forEach(x => x.setAttribute('aria-pressed', x === b)); lastT = -1; drawChart(); });
 JUMPS.forEach(([m, n]) => { const c = document.createElement('button'); c.className = 'chip'; c.textContent = clock(m) + ' ' + n.toLowerCase(); c.onclick = () => { t = m; }; $('jumps').appendChild(c); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); lastT = -1; });
 
 function sizing() {
-  let pk = 0, pkT = 0, mxF = 0, mxT = 0, data = 0;
-  for (let s = 0; s < NS; s++) { const d = S.Ddl[s] + S.Dul[s]; if (d > pk) { pk = d; pkT = s * STEP; } if (S.nF[s] > mxF) { mxF = S.nF[s]; mxT = s * STEP; } data += d * STEP * 60 / 8 / 1e6; }
-  const spare = Math.ceil(mxF * 12 / 35);
+  let pk = 0, pkT = 0, mx = 0, mxT = 0, data = 0;
+  for (let s = 0; s < NS; s++) { const d = S.Ddl[s] + S.Dul[s]; if (d > pk) { pk = d; pkT = s * STEP; } if (S.nU[s] > mx) { mx = S.nU[s]; mxT = s * STEP; } data += d * STEP * 60 / 8 / 1e6; }
+  const sm = Math.round(mxT / STEP), spare = Math.ceil(mx * 12 / 35);
   let showD = 0, showH = 0, showL = 0; for (let s = 105; s < 195; s++) { showD += S.Ddl[s] + S.Dul[s]; showH += S.hyb[s]; showL += S.leo[s]; }
-  const rows = [['UAV neo (26 GHz)', nf(NT)], ['UAV bay cùng lúc, tối đa', nf(mxF) + ' lúc ' + clock(mxT)], ['Dự phòng thay pin', nf(spare)],
-    ['Tổng đội bay', nf(NT + mxF + spare)], ['Đỉnh nhu cầu', nf(pk / 1000, 1) + ' Gbps lúc ' + clock(pkT)], ['Tổng dữ liệu', nf(data, 1) + ' TB (' + nf(data * 1e3 / NA, 2) + ' GB/khán giả)'],
-    ['Phục vụ khi biểu diễn: lai / chỉ LEO', nf(showH / showD * 100) + '% / ' + nf(showL / showD * 100) + '%']];
-  $('sizing').innerHTML = rows.map(([a, b], i) => `<dt${i === 3 ? ' class="total"' : ''}>${a}</dt><dd${i === 3 ? ' class="total"' : ''}>${b}</dd>`).join('');
-  window.__sizing = { NT, mxF, mxT: clock(mxT), spare, fleet: NT + mxF + spare, peakGbps: pk / 1000, peakT: clock(pkT), dataTB: data, gbPer: data * 1e3 / NA, showHyb: showH / showD, showLeo: showL / showD };
+  let mxB = 0, mxBT = 0; for (let s = 0; s < NS; s++) if (S.nB[s] > mxB) { mxB = S.nB[s]; mxBT = s * STEP; }
+  const rows = [['UAV bay cùng lúc, tối đa', nf(mx) + ' lúc ' + clock(mxT)], ['Lúc đó: trong sân / ngoài sân', nf(S.nB[sm]) + ' / ' + nf(S.nO[sm])],
+    ['Trong sân, tối đa', nf(mxB) + ' lúc ' + clock(mxBT)], ['Dự phòng thay pin', nf(spare)], ['Tổng đội bay', nf(mx + spare)],
+    ['Đỉnh nhu cầu', nf(pk / 1000, 1) + ' Gbps lúc ' + clock(pkT)], ['Tổng dữ liệu', nf(data, 1) + ' TB (' + nf(data * 1e3 / NA, 2) + ' GB/khán giả)'],
+    ['Phục vụ khi biểu diễn: gateway / chỉ LEO', nf(showH / showD * 100) + '% / ' + nf(showL / showD * 100) + '%']];
+  $('sizing').innerHTML = rows.map(([a, b], i) => `<dt${i === 4 ? ' class="total"' : ''}>${a}</dt><dd${i === 4 ? ' class="total"' : ''}>${b}</dd>`).join('');
+  window.__sizing = { mx, mxT: clock(mxT), inBowlAtMax: S.nB[sm], outAtMax: S.nO[sm], mxB, mxBT: clock(mxBT), spare, fleet: mx + spare, peakGbps: pk / 1000, peakT: clock(pkT), dataTB: data, showGw: showH / showD, showLeo: showL / showD };
 }
 
 // ---------- boot ----------
 theme();
 async function boot() {
-  buildAgents(); precomputeTethered();
+  buildAgents();
   for (let s = 0; s < NS; s++) { simStep(s); if (s % 6 === 0) { $('loadFill').style.width = (s / NS * 100) + '%'; $('loadTxt').textContent = 'Đang mô phỏng 7,5 giờ sự kiện, ' + Math.round(s / NS * 100) + '%'; await new Promise(r => setTimeout(r)); } }
   ready = true; sizing(); $('loading').style.display = 'none'; size(); drawChart();
   window.__S = S; window.__ready = true;
