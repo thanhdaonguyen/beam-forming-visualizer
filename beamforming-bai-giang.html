@@ -90,6 +90,17 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .embed iframe{width:100%;height:620px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
 .try li{margin-bottom:10px}
 .refs li{font-size:15px}
+.sinrbar{position:relative;margin:6px 0 4px;padding-bottom:22px}
+.sinrbar .row{display:flex;gap:2px;font-size:12px;text-align:center;margin-bottom:3px}
+.sinrbar .row span{padding:5px 2px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sinrbar .q span:nth-child(1){background:color-mix(in srgb,var(--danger) 22%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(2){background:color-mix(in srgb,var(--amber) 22%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(3){background:color-mix(in srgb,var(--cobalt) 18%,var(--paper));color:var(--ink)}
+.sinrbar .q span:nth-child(4){background:color-mix(in srgb,var(--cobalt) 36%,var(--paper));color:var(--ink)}
+.sinrbar .m span{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+.sinrbar .m span.off{background:transparent;border-style:dashed}
+.sinrbar .marker{position:absolute;top:-4px;bottom:18px;width:2px;background:var(--ink);border-radius:1px;transition:left .08s}
+.sinrbar .ticks{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 @media (max-width:1000px){ .wrap{grid-template-columns:minmax(0,1fr);gap:0;padding-top:24px} nav.toc{display:none} figure{width:100%} }
 @media (max-width:640px){ body{font-size:16px} .wrap{padding:20px 16px 60px} header.hero h1{font-size:27px} .twin{grid-template-columns:1fr} figure{padding:14px 12px 12px;border-radius:12px} .embed iframe{height:560px} .top{padding:10px 16px} }
 </style>
@@ -114,6 +125,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
       <li><a href="#kien-truc">Ai tạo ra trọng số</a></li>
       <li><a href="#quan-ly-bup">Chọn búp trong 5G NR</a></li>
       <li><a href="#doc-beam-3d">Đọc mô hình búp sóng 3D</a></li>
+      <li><a href="#con-so-tot">Bao nhiêu là tốt</a></li>
       <li><a href="#uav">Áp dụng cho UAV-BS</a></li>
       <li><a href="#doc-them">Tài liệu đọc thêm</a></li>
     </ol>
@@ -305,6 +317,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
           <tr><td>Suy hao do lái</td><td>8 + 10·log₁₀(N<sub>H</sub>N<sub>V</sub>) trừ độ lợi cực đại</td></tr>
         </tbody>
       </table></div>
+      <p>Không chắc một con số là tốt hay kém? Xem bảng tra ở <a href="#con-so-tot">mục 10</a>.</p>
       <h3>Năm thí nghiệm nên làm theo thứ tự</h3>
       <ol class="try">
         <li>Chọn <b>Phần tử đơn</b>. Bạn thấy một búp rộng, độ lợi 8 dBi, búp 3 dB rộng 65°. Đây là "viên gạch" cơ bản.</li>
@@ -327,8 +340,92 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
       <div class="embed" id="embed"></div>
     </section>
 
+    <section id="con-so-tot">
+      <h2><span class="n">10</span>Đọc các con số: bao nhiêu là tốt</h2>
+      <p>Phần này là bảng tra để bạn bám vào khi nhìn các con số trên các trang mô phỏng hay trong bài báo. Các ngưỡng "tốt, kém" của RSRP và SINR là quy ước thực hành, không phải tiêu chuẩn 3GPP, và mỗi nhà sản xuất thiết bị đặt lệch nhau vài dB.</p>
+
+      <h3>Đọc dB trong 30 giây</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Đơn vị</th><th>Nghĩa</th><th>Mốc dễ nhớ</th></tr></thead>
+        <tbody>
+          <tr><td>dB</td><td>Tỉ số, không có đơn vị</td><td>+3 dB là gấp đôi, +10 dB là gấp 10, +20 dB là gấp 100; −3 dB là còn một nửa</td></tr>
+          <tr><td>dBm</td><td>Công suất so với 1 mW</td><td>0 dBm = 1 mW; 23 dBm = 0,2 W (điện thoại); 30 dBm = 1 W; 37 dBm = 5 W (UAV trong mô phỏng)</td></tr>
+          <tr><td>dBi</td><td>Độ lợi anten so với anten đẳng hướng</td><td>0 dBi = đẳng hướng; 8 dBi = một phần tử patch; khoảng 32 dBi = mảng 16×16</td></tr>
+          <tr><td>EIRP</td><td>Công suất phát cộng độ lợi anten</td><td>37 dBm + 32 dBi = 69 dBm theo hướng búp chính</td></tr>
+        </tbody>
+      </table></div>
+      <p>Vì mọi thứ tính bằng dB, ngân sách đường truyền chỉ là phép cộng trừ: <i>công suất thu = công suất phát + độ lợi anten phát + độ lợi anten thu − suy hao đường truyền</i>. Để có cảm giác về độ lớn: suy hao không gian tự do ở 100 m là khoảng 83 dB tại 3,5 GHz và khoảng 101 dB tại 26 GHz.</p>
+
+      <h3>Các con số của anten và mảng</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Đại lượng</th><th>Thường gặp</th><th>Đọc thế nào</th></tr></thead>
+        <tbody>
+          <tr><td>Độ lợi phần tử</td><td>5–8 dBi</td><td>3GPP dùng 8 dBi. Đây là mức nền, không phải thứ để tối ưu.</td></tr>
+          <tr><td>Độ lợi cả mảng</td><td>khoảng 26 dBi (8×8), khoảng 32 dBi (16×16)</td><td>Càng cao càng tốt cho người được phục vụ, nhưng búp càng hẹp càng khó bám theo người di chuyển.</td></tr>
+          <tr><td>Độ rộng búp 3 dB</td><td>vài độ đến vài chục độ</td><td>Hẹp: ít nhiễu, độ lợi cao, cần căn búp chính xác. Rộng: dễ phủ, độ lợi thấp.</td></tr>
+          <tr><td>Búp phụ lớn nhất</td><td>−13 dB (trọng số đều)</td><td>Thấp hơn −20 dB là tốt; cao hơn −10 dB là đáng lo vì gây nhiễu sang hướng khác.</td></tr>
+          <tr><td>Suy hao do lái</td><td>0–10 dB</td><td>Dưới 3 dB: tốt. 3–6 dB: chấp nhận được. Trên 6 dB: đang ở rìa vùng lái, nên chuyển sang panel hoặc UAV khác.</td></tr>
+          <tr><td>Tỉ số trước/sau</td><td>khoảng 30 dB (3GPP)</td><td>Trên 25 dB là tốt: panel gần như không bức xạ ra phía sau.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Các con số của đường truyền</h3>
+      <p><b>RSRP</b> là công suất thu của tín hiệu tham chiếu trên <i>một</i> sóng mang con, nên con số trông rất nhỏ. Với 100 MHz chia thành 3.276 sóng mang con 30 kHz, tổng công suất thu cao hơn RSRP khoảng 35 dB. <b>RSRQ</b> so RSRP với tổng công suất thu, phản ánh mức tải và nhiễu. <b>SINR</b> là tỉ số tín hiệu trên nhiễu cộng tạp âm, và là con số quyết định tốc độ.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Đại lượng</th><th>Rất tốt</th><th>Tốt</th><th>Trung bình</th><th>Kém</th></tr></thead>
+        <tbody>
+          <tr><td>RSRP (dBm)</td><td>≥ −80</td><td>−80 đến −90</td><td>−90 đến −100</td><td>&lt; −100; dưới −120 dễ mất kết nối</td></tr>
+          <tr><td>RSRQ (dB)</td><td>≥ −10</td><td>−10 đến −15</td><td>−15 đến −20</td><td>&lt; −20</td></tr>
+          <tr><td>SINR (dB)</td><td>≥ 20</td><td>13 đến 20</td><td>0 đến 13</td><td>&lt; 0, tốc độ rất thấp</td></tr>
+        </tbody>
+      </table></div>
+      <p>RSRP cho biết <i>có sóng hay không</i>; SINR cho biết <i>sóng đó dùng được tới đâu</i>. Trong sân vận động đông người, RSRP thường rất tốt vì UAV ở gần, nhưng SINR có thể kém vì nhiều UAV dùng chung tần số gây nhiễu cho nhau. Đó là lý do bản đồ ở trang Mỹ Đình vẽ SINR chứ không vẽ RSRP.</p>
+
+      <h3>SINR đổi ra tốc độ</h3>
+      <p>Trạm chọn cách điều chế và mã hóa theo SINR mà người dùng báo về (chỉ số CQI). Hình dưới đổi SINR ra hiệu suất phổ bằng công thức Shannon suy giảm dùng trong các trang mô phỏng, SE = 0,75·log₂(1 + SINR), rồi so với bảng CQI 256QAM của 3GPP TS 38.214.</p>
+      <figure>
+        <div class="ctl">
+          <div><div class="field-top"><label for="q-s">SINR</label><span class="val" id="q-so"></span></div><input type="range" id="q-s" min="-12" max="36" step="0.5" value="15"></div>
+          <div><div class="field-top"><span>Băng thông</span></div><span class="pills" role="group" aria-label="Băng thông"><button data-bw="20" aria-pressed="false">20 MHz</button><button data-bw="100" aria-pressed="true">100 MHz</button><button data-bw="800" aria-pressed="false">800 MHz</button></span></div>
+          <div><div class="field-top"><span>Số luồng (búp đồng thời)</span></div><span class="pills" role="group" aria-label="Số luồng"><button data-ly="1" aria-pressed="true">1</button><button data-ly="2" aria-pressed="false">2</button><button data-ly="4" aria-pressed="false">4</button></span></div>
+        </div>
+        <div class="sinrbar" aria-hidden="true">
+          <div class="row q"><span style="flex:12">Kém</span><span style="flex:13">Trung bình</span><span style="flex:7">Tốt</span><span style="flex:16">Rất tốt</span></div>
+          <div class="row m"><span style="flex:3.8" class="off">Không giải mã</span><span style="flex:12.8">QPSK</span><span style="flex:6">16QAM</span><span style="flex:11.7">64QAM</span><span style="flex:7.4">256QAM</span><span style="flex:6.3" class="off">Bão hòa</span></div>
+          <div class="marker" id="q-mk"></div>
+          <div class="ticks"><span>−12</span><span>0</span><span>12</span><span>24</span><span>36 dB</span></div>
+        </div>
+        <dl class="readouts">
+          <div><dt>Mức chất lượng</dt><dd id="q-lb">–</dd></div>
+          <div><dt>Điều chế (CQI)</dt><dd id="q-mod">–</dd></div>
+          <div><dt>Hiệu suất phổ</dt><dd id="q-se">–</dd></div>
+          <div><dt>Giới hạn Shannon</dt><dd id="q-sh">–</dd></div>
+          <div><dt>Thông lượng ước tính</dt><dd id="q-tp">–</dd></div>
+        </dl>
+        <figcaption>Ngưỡng điều chế: QPSK cần khoảng −8 dB, 16QAM khoảng 4,6 dB, 64QAM khoảng 10,6 dB, 256QAM khoảng 22,3 dB, và trên khoảng 30 dB không tăng thêm vì đã ở mức mã cao nhất. Đây là ước lượng theo công thức của mô phỏng; ngưỡng thực tế phụ thuộc thiết bị và mục tiêu tỉ lệ lỗi khối. Thông lượng = băng thông × hiệu suất phổ × số luồng, nhân thêm 0,7 khi có nhiều luồng (hiệu suất MU-MIMO, như trong các trang mô phỏng); chưa trừ phần tài nguyên dành cho tín hiệu điều khiển.</figcaption>
+      </figure>
+      <p>Hai điều rút ra:</p>
+      <ul>
+        <li><b>Trên khoảng 30 dB, SINR cao hơn không đem lại gì.</b> Trang <a href="uav-beamforming.html">UAV lái búp</a> hiện SNR 50–70 dB vì chỉ có một UAV, không có nhiễu và không tính lỗi của máy thu. Thực tế, máy thu điện thoại hiếm khi đạt quá khoảng 30 dB.</li>
+        <li><b>Băng thông và số luồng quan trọng ngang SINR.</b> Từ 100 MHz lên 800 MHz nhân tốc độ lên 8 lần; muốn tăng 8 lần nhờ SINR thì gần như không thể. Đây là lý do UAV trong trang Mỹ Đình cần radio 26 GHz.</li>
+      </ul>
+
+      <h3>Bảng tra cho các trang mô phỏng</h3>
+      <div class="scroll"><table>
+        <thead><tr><th>Trang</th><th>Con số</th><th>Tốt</th><th>Cần chú ý</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="2">Mô hình búp sóng 3D</td><td>Độ lợi cực đại</td><td>gần 8 + 10·log₁₀(N<sub>H</sub>N<sub>V</sub>) dBi</td><td>thấp hơn mức đó nhiều dB khi lái xa</td></tr>
+          <tr><td>Suy hao do lái</td><td>&lt; 3 dB</td><td>&gt; 6 dB</td></tr>
+          <tr><td>UAV lái búp</td><td>SNR, "so với đẳng hướng"</td><td>lợi thêm +10 dB trở lên khi lái búp</td><td>số âm: người dùng rơi vào điểm không của búp cố định</td></tr>
+          <tr><td rowspan="3">Lễ hội Mỹ Đình</td><td>Bản đồ SINR</td><td>màu cam, ≥ 20 dB</td><td>màu xanh nhạt, dưới khoảng 5 dB</td></tr>
+          <tr><td>Tải UAV cao nhất</td><td>&lt; 70%: còn dư</td><td>70–100%: bận; &gt; 100%: quá tải, người dùng bị chia bớt tài nguyên</td></tr>
+          <tr><td>Lưu lượng được phục vụ</td><td>≥ 95%</td><td>&lt; 90% (ô chuyển đỏ)</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
     <section id="uav">
-      <h2><span class="n">10</span>Áp dụng cho UAV-BS</h2>
+      <h2><span class="n">11</span>Áp dụng cho UAV-BS</h2>
       <p>Trên UAV-BS, panel thường gắn dưới bụng, mặt chính diện hướng thẳng xuống đất. Người dùng cách UAV một khoảng ngang r khi UAV bay ở độ cao h thì nằm lệch khỏi chính diện một góc α = arctan(r/h). Mọi điều ở mục 4 và 5 áp dụng nguyên vẹn với α thay cho θ₀: trong khoảng α ≤ 60°, tức r ≤ 1,7h, búp lái tốt; xa hơn, suy hao do lái tăng nhanh.</p>
       <p>Trang <a href="uav-beamforming.html">UAV lái búp tới người dùng</a> cho thấy điều này trên mặt đất, và trang <a href="my-dinh-uav.html">Lễ hội tại Mỹ Đình</a> dùng nó ở quy mô cả đội UAV. Ở trang Mỹ Đình, mô phỏng chạy theo bước 2 phút, nên beamforming được đưa vào dưới dạng trung bình:</p>
       <ul>
@@ -340,13 +437,15 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     </section>
 
     <section id="doc-them">
-      <h2><span class="n">11</span>Tài liệu đọc thêm</h2>
+      <h2><span class="n">12</span>Tài liệu đọc thêm</h2>
       <ul class="refs">
         <li>C. A. Balanis, <i>Antenna Theory: Analysis and Design</i>, Wiley. Các chương về mảng anten tuyến tính và phẳng.</li>
         <li>H. L. Van Trees, <i>Optimum Array Processing</i>, Wiley, 2002. Nền tảng về steering vector, tapering và grating lobe.</li>
         <li>3GPP TR 38.901, Bảng 7.3-1 (mẫu phần tử anten) và mục 7.1 (hệ tọa độ, phép quay panel).</li>
         <li>R. W. Heath Jr. và cộng sự, "An Overview of Signal Processing Techniques for Millimeter Wave MIMO Systems," <i>IEEE Journal of Selected Topics in Signal Processing</i>, 2016.</li>
         <li>F. Sohrabi và W. Yu, "Hybrid Digital and Analog Beamforming Design for Large-Scale Antenna Arrays," <i>IEEE Journal of Selected Topics in Signal Processing</i>, 2016.</li>
+        <li>3GPP TS 38.214, mục 5.2.2.1: các bảng CQI (điều chế, tỉ lệ mã và hiệu suất phổ).</li>
+        <li>Ngưỡng RSRP và RSRQ theo hướng dẫn của <a href="https://wiki.teltonika-networks.com/view/RSRP_and_RSRQ">Teltonika</a>; nhận xét SINR dưới 0 dB theo <a href="https://support.zyxel.eu/hc/en-us/articles/360005188999">Zyxel</a>. Các nhà sản xuất khác đặt ngưỡng lệch vài dB.</li>
         <li>M. Giordani và cộng sự, "A Tutorial on Beam Management for 3GPP NR at mmWave Frequencies," <i>IEEE Communications Surveys &amp; Tutorials</i>, 2019.</li>
       </ul>
     </section>
@@ -518,6 +617,26 @@ $('load-embed').onclick = () => { $('embed').innerHTML = '<iframe src="beam-3d.h
 const links = [...document.querySelectorAll('nav.toc a')];
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)); }), { rootMargin: '-30% 0px -60% 0px' });
 document.querySelectorAll('article section').forEach(s => io.observe(s));
+
+// ---------- SINR converter ----------
+const CQI2 = [[0.1523, 'QPSK'], [0.377, 'QPSK'], [0.877, 'QPSK'], [1.4766, '16QAM'], [1.9141, '16QAM'], [2.4063, '16QAM'], [2.7305, '64QAM'], [3.3223, '64QAM'], [3.9023, '64QAM'], [4.5234, '64QAM'], [5.1152, '64QAM'], [5.5547, '256QAM'], [6.2266, '256QAM'], [6.9141, '256QAM'], [7.4063, '256QAM']];
+let qBW = 100, qL = 1;
+function drawQ() {
+  const db = +$('q-s').value, s = Math.pow(10, db / 10), se = 0.75 * Math.log2(1 + s), sh = Math.log2(1 + s);
+  $('q-so').textContent = nf(db) + ' dB'; setFill($('q-s'));
+  $('q-mk').style.left = ((db + 12) / 48 * 100) + '%';
+  const lab = db >= 20 ? 'Rất tốt' : db >= 13 ? 'Tốt' : db >= 0 ? 'Trung bình' : 'Kém'; $('q-lb').textContent = lab; $('q-lb').classList.toggle('warn', db < 0);
+  let k = -1; CQI2.forEach((c, i) => { if (c[0] <= se) k = i; });
+  const eff = k >= 0 ? CQI2[k][0] : 0;
+  $('q-mod').textContent = k >= 0 ? CQI2[k][1] + ', CQI ' + (k + 1) : 'Không giải mã được';
+  $('q-se').textContent = nf(eff, 2) + ' bit/s/Hz'; $('q-sh').textContent = nf(sh, 2) + ' bit/s/Hz';
+  const tp = qBW * eff * qL * (qL > 1 ? 0.7 : 1);
+  $('q-tp').textContent = tp >= 1000 ? nf(tp / 1000, 2) + ' Gbps' : nf(tp, 0) + ' Mbps';
+}
+$('q-s').addEventListener('input', drawQ);
+document.querySelectorAll('[data-bw]').forEach(b => b.onclick = () => { qBW = +b.dataset.bw; document.querySelectorAll('[data-bw]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawQ(); });
+document.querySelectorAll('[data-ly]').forEach(b => b.onclick = () => { qL = +b.dataset.ly; document.querySelectorAll('[data-ly]').forEach(x => x.setAttribute('aria-pressed', x === b)); drawQ(); });
+drawQ();
 
 function redrawAll() { fit(wave); drawWave(); drawArray(); drawMult(); drawArch(); drawBM(); }
 new ResizeObserver(() => redrawAll()).observe(document.querySelector('article'));
