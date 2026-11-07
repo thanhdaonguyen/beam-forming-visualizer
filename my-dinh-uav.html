@@ -13,7 +13,7 @@
   --cobalt:#2747D6; --cobalt-soft:#DCE3FB; --amber:#D9900B; --danger:#C8372D;
   --ramp-0:#D5DEE6; --ramp-1:#4F7FB8; --ramp-2:#F0A72B; --guide:#8B96A1; --body:#3B4652;
   --ground:#DDE2E7; --road:#C4CBD2; --lot:#D2D8DE; --plaza:#E9ECEF; --track:#D6C3BA; --pitch:#B7C9B4;
-  --stand:#AEB7C1; --roof:#9AA6B2; --arch:#6E7B88; --band:rgba(39,71,214,.06);
+  --stand:#AEB7C1; --roof:#9AA6B2; --arch:#6E7B88; --band:rgba(39,71,214,.06); --ok:#2F8F5B;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -21,7 +21,7 @@
     --cobalt:#7F97FF; --cobalt-soft:#1E2A52; --amber:#F2B13A; --danger:#FF6B5E;
     --ramp-0:#1B2836; --ramp-1:#4C7DBA; --ramp-2:#F5B544; --guide:#5E6B78; --body:#C9D3DD;
     --ground:#18232F; --road:#24313F; --lot:#1E2A37; --plaza:#1C2733; --track:#3A2F2C; --pitch:#22352B;
-    --stand:#3A4756; --roof:#56657A; --arch:#8C9AA8; --band:rgba(127,151,255,.08);
+    --stand:#3A4756; --roof:#56657A; --arch:#8C9AA8; --band:rgba(127,151,255,.08); --ok:#5BC98C;
   }
 }
 *{box-sizing:border-box}
@@ -93,7 +93,26 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .chart-head{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted);margin-bottom:4px}
 .chart-head i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 .chart-head i.ln{height:2px;border-radius:1px;vertical-align:3px}
-#tl{display:block;width:100%;height:150px;cursor:ew-resize;touch-action:none}
+#tl{display:block;width:100%;height:172px;cursor:ew-resize;touch-action:none}
+.field{margin-top:12px}
+.field-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;font-size:14px}
+.val{font-variant-numeric:tabular-nums;font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:20px;background:transparent;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:linear-gradient(to right,var(--cobalt) var(--p,100%),var(--line) var(--p,100%))}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--line)}
+input[type=range]::-moz-range-progress{height:4px;border-radius:2px;background:var(--cobalt)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--paper);border:2px solid var(--cobalt)}
+.svc-row{margin-bottom:10px}
+.svc-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px}
+.svc-top small{color:var(--muted);font-size:12px}
+.svc-w{font-size:11.5px;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.svc-w.hi{border-color:var(--cobalt);color:var(--cobalt)}
+.svc-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:4px}
+.svc-bar i{display:block;height:100%;background:var(--ok)}
+.svc-bar i.bad{background:var(--danger)}
+.svc-bar i.mid{background:var(--amber)}
+.svc-num{font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
 @media (max-width:980px){ .kpis{grid-template-columns:repeat(3,minmax(0,1fr))} }
 @media (max-width:520px){ .kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .kpis dd{font-size:15px} }
 @media (max-width:860px){
@@ -156,12 +175,29 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
     </section>
 
     <section>
+      <h2 id="al-h">Khi thiếu tài nguyên</h2>
+      <div class="seg" role="group" aria-labelledby="al-h">
+        <button data-al="bit" aria-pressed="true"><span class="t">Chia đều theo bit</span><span class="d">Mọi bit như nhau: dịch vụ nào cũng bị cắt cùng một tỉ lệ</span></button>
+        <button data-al="val" aria-pressed="false"><span class="t">Ưu tiên theo giá trị</span><span class="d">Phục vụ trước dịch vụ quan trọng nhất trong pha hiện tại</span></button>
+      </div>
+      <div class="field"><div class="field-top"><label for="cap">Dung lượng khả dụng</label><span class="val" id="capo">100%</span></div><input type="range" id="cap" min="5" max="100" step="5" value="100"></div>
+      <p class="lede" style="font-size:13px;margin-top:6px">Giảm để giả lập sự cố như thiếu UAV, mất gateway hay nhiễu nặng. Chế độ chỉ LEO cũng làm thiếu backhaul.</p>
+    </section>
+
+    <section>
+      <h2>Dịch vụ lúc này</h2>
+      <div id="svc"></div>
+      <p class="lede" style="font-size:12.5px">Nhãn bên phải là tầm quan trọng của dịch vụ trong pha hiện tại. Dịch vụ thiết yếu chỉ dùng được khi nhận ít nhất 60% nhu cầu.</p>
+    </section>
+
+    <section>
       <h2>Ước tính đội UAV</h2>
       <dl class="sizing" id="sizing"><dt>Đang tính</dt><dd>–</dd></dl>
     </section>
 
     <div class="note">
       <p>Mọi UAV đều bay tự do và mang hai radio: 26 GHz (800 MHz, mảng 16×16) và 3,5 GHz (100 MHz, mảng 8×8), mỗi radio 4 búp. UAV trong sân chỉ bay trên đường chạy, không bay trên đầu khán giả. Kênh Al-Hourani đô thị, có suy hao do mái che khán đài A, B và do đám đông.</p>
+      <p>Năm lớp dịch vụ, tỉ lệ sử dụng theo pha và mức độ quan trọng của chúng là giả định minh họa. Khi ưu tiên theo giá trị, mỗi UAV phục vụ lần lượt các lớp từ quan trọng nhất trở xuống.</p>
       <p>Vị trí bãi xe, điểm đón và khu chờ tài xế quanh sân là giả định, không theo bản đồ thực.</p>
     </div>
   </aside>
@@ -184,8 +220,8 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
     </div>
     <section class="bottom">
       <dl class="kpis">
-        <div><dt>Trong sân / ngoài sân</dt><dd id="k-ppl">–</dd></div>
-        <div><dt>Tài xế quanh sân</dt><dd id="k-drv">–</dd></div>
+        <div><dt>Khán giả trong / ngoài sân</dt><dd id="k-ppl">–</dd></div>
+        <div><dt>Liên lạc, định vị đạt</dt><dd id="k-ess">–</dd></div>
         <div><dt>Nhu cầu tải xuống / tải lên</dt><dd id="k-dem">–</dd></div>
         <div><dt>UAV hoạt động</dt><dd id="k-uav">–</dd></div>
         <div><dt>Tải UAV cao nhất</dt><dd id="k-load">–</dd></div>
@@ -197,6 +233,7 @@ main{display:flex;flex-direction:column;min-width:0;min-height:0}
         <span><i style="background:var(--guide)"></i>mMTC (tài xế, cảm biến)</span>
         <span><i class="ln" style="background:var(--ink)"></i>Được phục vụ</span>
         <span><i class="ln" style="background:var(--cobalt)"></i>Số UAV (trục phải)</span>
+        <span><i style="background:linear-gradient(90deg,var(--danger),var(--amber),var(--ok));width:18px"></i>Dải dưới: tỉ lệ người dùng được đáp ứng liên lạc và định vị</span>
       </div>
       <canvas id="tl" aria-label="Dòng thời gian nhu cầu traffic, kéo để chọn thời điểm"></canvas>
     </section>
@@ -348,6 +385,26 @@ function profile(i, k, t) {
   return k < 3 ? [0.15, 1.2, 0.4] : [0.3, 0.8, 0.25];
 }
 
+// ---------- service classes and their importance by phase ----------
+// per active user: DL and UL Mbps; inelastic services are useful only above SAT of their demand
+const SVC = [
+  { name: 'Liên lạc thiết yếu', sub: 'thoại, nhắn tin', dl: 0.06, ul: 0.04, inel: true },
+  { name: 'Định vị và gọi xe', sub: 'bản đồ, ứng dụng gọi xe', dl: 0.3, ul: 0.05, inel: true },
+  { name: 'Tải lên mạng xã hội', sub: 'ảnh, video, phát trực tiếp', dl: 0.5, ul: 3.0, inel: false },
+  { name: 'Video giải trí', sub: 'xem video, nghe nhạc', dl: 3.0, ul: 0.1, inel: false },
+  { name: 'An ninh và vận hành', sub: 'camera, soát vé, bộ đàm', dl: 0, ul: 0, inel: true }
+];
+const NCL = SVC.length, SAT = 0.6;
+// share of active users in each class (first four classes), by where the person is and when
+function mix(i, k, t) {
+  if (i >= NA) return [0.2, 0.8, 0, 0];
+  if (k === 3) { if (t < 210) return [0.2, 0.05, 0.4, 0.35]; const h = hl(t); return [0.1 - 0.03 * h, 0.05 - 0.02 * h, 0.65 + 0.1 * h, 0.2 - 0.05 * h]; }
+  return k < 3 ? [0.25, 0.35, 0.25, 0.15] : [0.4, 0.4, 0.1, 0.1];
+}
+const phaseOf = t => t < 210 ? 0 : t < 390 ? 1 : 2;
+// importance weight of each class in each phase: arrival, show, exit
+const WGT = [[0.9, 0.8, 0.4, 0.2, 1], [0.7, 0.3, 0.6, 0.3, 1], [1, 0.95, 0.2, 0.1, 1]];
+
 // ---------- grid ----------
 const CELL = 25, NX = 48, NY = 42, NC = NX * NY;
 const cellOf = (x, y) => clamp(Math.floor((x - X0) / CELL), 0, NX - 1) + NX * clamp(Math.floor((y - Y0) / CELL), 0, NY - 1);
@@ -417,13 +474,14 @@ const S = {
   cellD: new Float32Array(NS * NC), loadM: new Float32Array(NS * KMAX), loadL: new Float32Array(NS * KMAX),
   upos: new Float32Array(NS * KMAX * 3), uact: new Uint8Array(NS * KMAX), utag: new Uint8Array(NS * KMAX), bhGw: new Int8Array(NS * KMAX),
   beams: new Float32Array(NS * KMAX * 12).fill(NaN),
+  capDl: new Float32Array(NS * KMAX), capUl: new Float32Array(NS * KMAX), cd: new Float32Array(NS * (KMAX + 1) * NCL * 3),
   Ddl: new Float32Array(NS), Dul: new Float32Array(NS), De: new Float32Array(NS), Du: new Float32Array(NS), Dm: new Float32Array(NS),
   acc: new Float32Array(NS), hyb: new Float32Array(NS), leo: new Float32Array(NS), nU: new Float32Array(NS), nB: new Float32Array(NS), nO: new Float32Array(NS),
   maxLoad: new Float32Array(NS), inside: new Float32Array(NS), outside: new Float32Array(NS), drivers: new Float32Array(NS)
 };
 const ux = new Float64Array(KMAX), uy = new Float64Array(KMAX), uh = new Float64Array(KMAX).fill(100), ua = new Uint8Array(KMAX), utg = new Uint8Array(KMAX);
 let prevM = new Float32Array(KMAX).fill(0.5), prevL = new Float32Array(KMAX).fill(0.5);
-const dl = new Float32Array(NC), ul = new Float32Array(NC);
+const dl = new Float32Array(NC), ul = new Float32Array(NC), cls = new Float32Array(NC * NCL * 3);
 
 function coverCount(list, R) {
   const tot = list.reduce((a, c) => a + dl[c] + ul[c], 0); if (!tot) return 0;
@@ -469,16 +527,18 @@ function placeRegion(tag, list, w, K) {
 }
 
 function simStep(s) {
-  const t = s * STEP; dl.fill(0); ul.fill(0);
+  const t = s * STEP; dl.fill(0); ul.fill(0); cls.fill(0);
   let De = 0, Dm = 0, inside = 0, outside = 0, drivers = 0;
   for (let i = 0; i < N; i++) {
     const k = agentAt(i, t); if (k < 0) continue;
-    const [a, d, u] = profile(i, k, t), c = cellOf(P.x, P.y);
-    dl[c] += a * d; ul[c] += a * u;
-    if (i >= NA) { drivers++; Dm += a * (d + u); } else { De += a * (d + u); if (k === 3 || inOuter(P.x, P.y)) inside++; else outside++; }
+    const a = profile(i, k, t)[0], m = mix(i, k, t), c = cellOf(P.x, P.y);
+    let d = 0, u = 0;
+    for (let j = 0; j < 4; j++) { const n = a * m[j], o = (c * NCL + j) * 3; cls[o] += SVC[j].dl * n; cls[o + 1] += SVC[j].ul * n; cls[o + 2] += n; d += SVC[j].dl * n; u += SVC[j].ul * n; }
+    dl[c] += d; ul[c] += u;
+    if (i >= NA) { drivers++; Dm += d + u; } else { De += d + u; if (k === 3 || inOuter(P.x, P.y)) inside++; else outside++; }
   }
   let Du = 0; const ufac = t >= 390 ? 1.3 : 1;
-  for (let c = 0; c < NC; c++) if (INFRA_UL[c]) { ul[c] += INFRA_UL[c] * ufac; Du += INFRA_UL[c] * ufac; }
+  for (let c = 0; c < NC; c++) if (INFRA_UL[c]) { const v = INFRA_UL[c] * ufac, o = (c * NCL + 4) * 3; ul[c] += v; Du += v; cls[o + 1] += v; cls[o + 2] += v / 0.3; }
   const cells = [], bowl = [], out = []; let Ddl = 0, Dul = 0, Db = 0, Do = 0;
   for (let c = 0; c < NC; c++) { const v = dl[c] + ul[c]; S.cellD[s * NC + c] = v; if (v <= 0) continue;
     cells.push(c); Ddl += dl[c]; Dul += ul[c]; if (inOuter(CX[c], CY[c])) { bowl.push(c); Db += v; } else { out.push(c); Do += v; } }
@@ -520,6 +580,16 @@ function simStep(s) {
     lM = nM; lL = nL;
   }
   prevM = Float32Array.from(lM, v => Math.max(v, 0.05)); prevL = Float32Array.from(lL, v => Math.max(v, 0.05));
+
+  // capacity of each UAV at the current traffic mix (demand divided by load), and its demand per service class
+  const dMd = new Float32Array(KMAX), dMu = new Float32Array(KMAX), dLd = new Float32Array(KMAX), dLu = new Float32Array(KMAX);
+  for (let q = 0; q < nC; q++) {
+    const u = srvU[q], c = cells[q], slot = u < 0 ? KMAX : u;
+    if (u >= 0) { if (srvB[q]) { dLd[u] += dl[c]; dLu[u] += ul[c]; } else { dMd[u] += dl[c]; dMu[u] += ul[c]; } }
+    for (let j = 0; j < NCL; j++) { const o = ((s * (KMAX + 1) + slot) * NCL + j) * 3, ci = (c * NCL + j) * 3; S.cd[o] += cls[ci]; S.cd[o + 1] += cls[ci + 1]; S.cd[o + 2] += cls[ci + 2]; }
+  }
+  for (const u of act) { const o = s * KMAX + u, mM = Math.max(lM[u], 1e-6), mL = Math.max(lL[u], 1e-6);
+    S.capDl[o] = dMd[u] / mM + dLd[u] / mL; S.capUl[o] = dMu[u] / mM + dLu[u] / mL; }
 
   // served traffic per UAV, then backhaul
   const accDl = new Float32Array(KMAX), accUl = new Float32Array(KMAX);
@@ -765,11 +835,12 @@ function updateText() {
   const cur = SCHED.filter(x => x[0] <= t).pop(), nxt = SCHED.find(x => x[0] > t);
   $('next').textContent = cur[1] + (nxt ? '. Tiếp theo: ' + clock(nxt[0]) + ', ' + nxt[1].toLowerCase() : '') + '.';
   $('k-ppl').innerHTML = nf(Math.round(lerpS(S.inside, s0, f) / 100) * 100) + '<small>/ ' + nf(Math.round(lerpS(S.outside, s0, f) / 100) * 100) + '</small>';
-  $('k-drv').textContent = nf(Math.round(lerpS(S.drivers, s0, f) / 10) * 10);
+  const es = AL.ess[sn]; $('k-ess').innerHTML = nf(es * 100) + '<small>% người dùng</small>'; $('k-ess').classList.toggle('warn', es < 0.9);
+  updateServices(sn);
   $('k-dem').innerHTML = nf(lerpS(S.Ddl, s0, f) / 1000, 1) + '<small>/</small> ' + nf(lerpS(S.Dul, s0, f) / 1000, 1) + '<small>Gbps</small>';
   $('k-uav').innerHTML = nf(S.nU[sn]) + '<small>' + S.nB[sn] + ' trong sân, ' + S.nO[sn] + ' ngoài</small>';
   const ml = S.maxLoad[sn]; $('k-load').innerHTML = nf(Math.min(ml, 9.99) * 100) + '<small>%</small>'; $('k-load').classList.toggle('warn', ml > 1);
-  const D = lerpS(S.Ddl, s0, f) + lerpS(S.Dul, s0, f), sv = lerpS(bh === 'hyb' ? S.hyb : S.leo, s0, f), pct = D > 0 ? sv / D * 100 : 100;
+  const D = lerpS(S.Ddl, s0, f) + lerpS(S.Dul, s0, f), sv = lerpS(AL.srv, s0, f), pct = D > 0 ? sv / D * 100 : 100;
   $('k-srv').innerHTML = nf(Math.min(pct, 100)) + '<small>% · ' + nf(sv / 1000, 1) + ' Gbps</small>'; $('k-srv').classList.toggle('warn', pct < 90);
 }
 function updateLabels() {
@@ -779,13 +850,63 @@ function updateLabels() {
     L.d.style.left = (v.x + 1) / 2 * VW + 'px'; L.d.style.top = (1 - v.y) / 2 * VH + 'px'; }
 }
 
+// ---------- allocation when resources are short ----------
+let policy = 'bit', capScale = 1;
+const AL = { ess: new Float32Array(NS), val: new Float32Array(NS), srv: new Float32Array(NS), frac: new Float32Array(NS * NCL), users: new Float32Array(NS * NCL) };
+function allocate() {
+  for (let s = 0; s < NS; s++) {
+    const w = WGT[phaseOf(s * STEP)], order = [4, 0, 1, 2, 3].sort((a, b) => w[b] - w[a]);
+    const dem = new Float64Array(NCL), got = new Float64Array(NCL), us = new Float64Array(NCL), sat = new Float64Array(NCL), util = new Float64Array(NCL);
+    let served = 0;
+    for (let u = 0; u <= KMAX; u++) {
+      const base = (s * (KMAX + 1) + u) * NCL * 3;
+      let cd = 0, cu = 0;
+      if (u < KMAX && S.uact[s * KMAX + u]) {
+        const o = s * KMAX + u, g = S.bhGw[o]; cd = S.capDl[o]; cu = S.capUl[o];
+        if (bh === 'leo' || g < 0) { cd = Math.min(cd, 250); cu = Math.min(cu, 30); }
+        else if (cd + cu > 10000) { const k = 10000 / (cd + cu); cd *= k; cu *= k; }
+        cd *= capScale; cu *= capScale;
+      }
+      const g2 = [new Float64Array(NCL), new Float64Array(NCL)];
+      [cd, cu].forEach((cap, dir) => {
+        let tot = 0; for (let j = 0; j < NCL; j++) tot += S.cd[base + j * 3 + dir];
+        if (tot <= 0) return;
+        if (policy === 'bit') { const f = Math.min(1, cap / tot); for (let j = 0; j < NCL; j++) g2[dir][j] = S.cd[base + j * 3 + dir] * f; }
+        else { let rem = cap; for (const j of order) { const v = Math.min(S.cd[base + j * 3 + dir], rem); g2[dir][j] = v; rem -= v; } }
+      });
+      for (let j = 0; j < NCL; j++) {
+        const d = S.cd[base + j * 3] + S.cd[base + j * 3 + 1], n = S.cd[base + j * 3 + 2], gj = g2[0][j] + g2[1][j];
+        if (n <= 0 && d <= 0) continue;
+        const fr = d > 0 ? gj / d : 1;
+        dem[j] += d; got[j] += gj; us[j] += n; served += gj;
+        if (fr >= SAT - 1e-6) sat[j] += n;
+        util[j] += n * (SVC[j].inel ? (fr >= SAT - 1e-6 ? 1 : 0.5 * fr / SAT) : Math.log(1 + 9 * fr) / Math.log(10));
+      }
+    }
+    let wu = 0, wn = 0;
+    for (let j = 0; j < NCL; j++) { AL.frac[s * NCL + j] = SVC[j].inel ? (us[j] > 0 ? sat[j] / us[j] : 1) : (dem[j] > 0 ? got[j] / dem[j] : 1); AL.users[s * NCL + j] = us[j]; wu += w[j] * util[j]; wn += w[j] * us[j]; }
+    AL.ess[s] = us[0] + us[1] > 0 ? (sat[0] + sat[1]) / (us[0] + us[1]) : 1;
+    AL.val[s] = wn > 0 ? wu / wn : 1; AL.srv[s] = served;
+  }
+  window.__AL = AL;
+}
+const wLabel = w => w >= 0.9 ? 'Rất cao' : w >= 0.6 ? 'Cao' : w >= 0.3 ? 'Trung bình' : 'Thấp';
+function updateServices(sn) {
+  const w = WGT[phaseOf(sn * STEP)];
+  $('svc').innerHTML = SVC.map((c, j) => {
+    const f = AL.frac[sn * NCL + j], n = AL.users[sn * NCL + j], cl = f < 0.6 ? 'bad' : f < 0.9 ? 'mid' : '';
+    return `<div class="svc-row"><div class="svc-top"><span>${c.name}</span><span class="svc-w${w[j] >= 0.9 ? ' hi' : ''}">${wLabel(w[j])}</span></div>
+      <div class="svc-bar"><i class="${cl}" style="width:${(f * 100).toFixed(1)}%"></i></div><div class="svc-num">${nf(f * 100)}% ${c.inel ? 'người dùng được đáp ứng' : 'lưu lượng được phục vụ'}${n >= 50 ? ' · khoảng ' + nf(Math.round(n / 100) * 100) + ' người' : ''}</div></div>`;
+  }).join('');
+}
+
 // ---------- timeline chart ----------
 const tl = $('tl'), tctx = tl.getContext('2d');
 function drawChart() {
   if (!ready) return;
   const dpr = Math.min(devicePixelRatio, 2), W = tl.clientWidth, H = tl.clientHeight; tl.width = W * dpr; tl.height = H * dpr; tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   tctx.clearRect(0, 0, W, H);
-  const L = 44, R = 40, T = 20, B = 20, w = W - L - R, h = H - T - B, xs = m => L + m / T_END * w;
+  const L = 64, R = 40, T = 20, B = 40, w = W - L - R, h = H - T - B, xs = m => L + m / T_END * w;
   let maxD = 0; for (let s = 0; s < NS; s++) maxD = Math.max(maxD, S.Ddl[s] + S.Dul[s]);
   const yMax = Math.ceil(maxD / 1000 / 10) * 10, ys = g => T + h - g / yMax * h, uMax = 60, yu = n => T + h - n / uMax * h;
   const font = '11.5px "Be Vietnam Pro", system-ui, sans-serif', muted = cssv('--muted');
@@ -801,7 +922,7 @@ function drawChart() {
     tctx.closePath(); tctx.fillStyle = col; tctx.globalAlpha = 0.7; tctx.fill(); tctx.globalAlpha = 1;
     for (let s = 0; s < NS; s++) base[s] += arr[s];
   }
-  const sv = bh === 'hyb' ? S.hyb : S.leo;
+  const sv = AL.srv;
   tctx.beginPath(); for (let s = 0; s < NS; s++) tctx.lineTo(xs(s * STEP), ys(sv[s] / 1000)); tctx.strokeStyle = cssv('--ink'); tctx.lineWidth = 1.6; tctx.stroke();
   tctx.beginPath(); for (let s = 0; s < NS; s++) { const n = S.nU[s]; if (s) tctx.lineTo(xs(s * STEP), yu(S.nU[s - 1])); tctx.lineTo(xs(s * STEP), yu(n)); }
   tctx.strokeStyle = cssv('--cobalt'); tctx.lineWidth = 1.2; tctx.setLineDash([4, 3]); tctx.stroke(); tctx.setLineDash([]);
@@ -811,6 +932,11 @@ function drawChart() {
   tctx.textAlign = 'left'; for (const n of [0, 30, 60]) tctx.fillText(nf(n), L + w + 6, yu(n));
   tctx.textAlign = 'center'; tctx.textBaseline = 'top';
   for (let m = 0; m <= T_END; m += 60) tctx.fillText(clock(m), xs(m), T + h + 5);
+  // strip: share of users whose essential services are met
+  const cBad = new THREE.Color(cssv('--danger')), cMid = new THREE.Color(cssv('--amber')), cOk = new THREE.Color(cssv('--ok')), cc = new THREE.Color(), sy = H - 13;
+  for (let s = 0; s < NS - 1; s++) { const v = AL.ess[s]; v < 0.5 ? cc.copy(cBad).lerp(cMid, v * 2) : cc.copy(cMid).lerp(cOk, (v - 0.5) * 2);
+    tctx.fillStyle = '#' + cc.getHexString(); tctx.fillRect(xs(s * STEP), sy, xs((s + 1) * STEP) - xs(s * STEP) + 0.6, 9); }
+  tctx.fillStyle = muted; tctx.textAlign = 'right'; tctx.textBaseline = 'middle'; tctx.fillText('Thiết yếu', L - 6, sy + 4.5);
   tctx.fillStyle = cssv('--amber');
   for (const [s0, d, , n] of HIGHLIGHTS) { const x = xs(s0 + d / 2); tctx.beginPath(); tctx.moveTo(x - 4, T - 2); tctx.lineTo(x + 4, T - 2); tctx.lineTo(x, T + 4); tctx.fill(); }
   // cursor
@@ -818,7 +944,7 @@ function drawChart() {
   tctx.fillStyle = cssv('--ink'); tctx.font = '500 ' + font; tctx.textBaseline = 'bottom'; tctx.fillText(clock(t), clamp(x, L + 16, L + w - 16), T - 6);
 }
 let scrub = false;
-const setFromX = e => { const r = tl.getBoundingClientRect(); t = clamp((e.clientX - r.left - 44) / (r.width - 84) * T_END, 0, T_END); };
+const setFromX = e => { const r = tl.getBoundingClientRect(); t = clamp((e.clientX - r.left - 64) / (r.width - 104) * T_END, 0, T_END); };
 tl.addEventListener('pointerdown', e => { scrub = true; tl.setPointerCapture(e.pointerId); setFromX(e); });
 tl.addEventListener('pointermove', e => { if (scrub) setFromX(e); });
 tl.addEventListener('pointerup', () => scrub = false);
@@ -830,7 +956,9 @@ document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => { speed = 
 document.querySelectorAll('[data-layer]').forEach(b => b.onclick = () => { const k = b.dataset.layer; layer[k] = !layer[k]; b.setAttribute('aria-pressed', layer[k]);
   ptsA.visible = ptsD.visible = layer.people; lastT = -1; });
 document.querySelectorAll('[data-map]').forEach(b => b.onclick = () => { mapMode = b.dataset.map; document.querySelectorAll('[data-map]').forEach(x => x.setAttribute('aria-pressed', x === b)); lastMapStep = -1; lastT = -1; });
-document.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { bh = b.dataset.bh; document.querySelectorAll('[data-bh]').forEach(x => x.setAttribute('aria-pressed', x === b)); lastT = -1; drawChart(); });
+document.querySelectorAll('[data-bh]').forEach(b => b.onclick = () => { bh = b.dataset.bh; document.querySelectorAll('[data-bh]').forEach(x => x.setAttribute('aria-pressed', x === b)); allocate(); lastT = -1; drawChart(); });
+document.querySelectorAll('[data-al]').forEach(b => b.onclick = () => { policy = b.dataset.al; document.querySelectorAll('[data-al]').forEach(x => x.setAttribute('aria-pressed', x === b)); allocate(); lastT = -1; drawChart(); });
+$('cap').addEventListener('input', e => { capScale = +e.target.value / 100; $('capo').textContent = e.target.value + '%'; e.target.style.setProperty('--p', ((e.target.value - 5) / 95 * 100) + '%'); allocate(); lastT = -1; drawChart(); });
 JUMPS.forEach(([m, n]) => { const c = document.createElement('button'); c.className = 'chip'; c.textContent = clock(m) + ' ' + n.toLowerCase(); c.onclick = () => { t = m; }; $('jumps').appendChild(c); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { theme(); lastT = -1; });
 
@@ -853,7 +981,7 @@ theme();
 async function boot() {
   buildAgents();
   for (let s = 0; s < NS; s++) { simStep(s); if (s % 6 === 0) { $('loadFill').style.width = (s / NS * 100) + '%'; $('loadTxt').textContent = 'Đang mô phỏng 7,5 giờ sự kiện, ' + Math.round(s / NS * 100) + '%'; await new Promise(r => setTimeout(r)); } }
-  ready = true; sizing(); $('loading').style.display = 'none'; size(); drawChart();
+  allocate(); ready = true; sizing(); $('loading').style.display = 'none'; size(); drawChart();
   window.__S = S; window.__ready = true;
 }
 boot();
