@@ -43,7 +43,7 @@ h2{font-size:14px;font-weight:600;margin:0 0 10px}
 .btn svg{width:15px;height:15px}
 .btn.primary{min-width:112px}
 .pills{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.pills button{font:inherit;font-size:13px;border:0;background:transparent;color:var(--muted);padding:7px 10px;cursor:pointer}
+.pills button{font:inherit;font-size:12.5px;border:0;background:transparent;color:var(--muted);padding:7px 7px;cursor:pointer;white-space:nowrap}
 .pills button+button{border-left:1px solid var(--line)}
 .pills button[aria-pressed="true"]{background:var(--cobalt-soft);color:var(--cobalt);font-weight:500}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -160,8 +160,9 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
         <button class="btn" data-layer="labels" aria-pressed="true">Nhãn</button>
       </div>
       <div class="pills" role="group" aria-label="Bản đồ mặt đất">
-        <button data-map="demand" aria-pressed="true">Mật độ nhu cầu</button>
-        <button data-map="sinr" aria-pressed="false">SINR</button>
+        <button data-map="demand" aria-pressed="true">Nhu cầu</button>
+        <button data-map="sinr" aria-pressed="false">SINR 3,5 GHz</button>
+        <button data-map="sinr26" aria-pressed="false">SINR 26 GHz</button>
         <button data-map="off" aria-pressed="false">Tắt</button>
       </div>
     </section>
@@ -811,7 +812,7 @@ function updateUAVs() {
   }
   if (!reduced) for (const g of uavs) if (g.visible) g.children.forEach((c, k) => { if (k >= 3 && k <= 6) c.rotation.y += 0.5; });
 }
-function sinrAt(x, y, h, act, sn) {
+function sinrAt(x, y, h, act, sn, mm) {
   let ItM = 0, ItL = 0, bm = -1, bsm = 0, bl = -1, bsl = 0, iM = 0, iL = 0;
   for (const u of act) {
     const o = (sn * KMAX + u) * 3, ux = S.upos[o], uy = S.upos[o + 1], uh = S.upos[o + 2], b = blockXY(ux, uy, uh, x, y, h), k = sn * KMAX + u;
@@ -820,7 +821,7 @@ function sinrAt(x, y, h, act, sn) {
     if (hd <= MM.range && m[0] > bsm) { bsm = m[0]; bm = u; iM = im; } if (hd <= LB.range && l[0] > bsl) { bsl = l[0]; bl = u; iL = il; }
   }
   const sM = bm >= 0 ? bsm / (ItM - iM + MM.noise) : 0, sL = bl >= 0 ? bsl / (ItL - iL + LB.noise) : 0;
-  return MM.B * seOf(sM, 5.5) >= LB.B * seOf(sL, 5.5) ? sM : sL;
+  return mm ? sM : sL;   // 0 when no UAV is within range of that band
 }
 function paint(data, o, k, a) { const col = ramp(k); data[o] = col.r * 255; data[o + 1] = col.g * 255; data[o + 2] = col.b * 255; data[o + 3] = a; }
 function updateMap() {
@@ -841,10 +842,11 @@ function updateMap() {
     $('lgHi').textContent = '≥ 1 Gbps/ô'; $('lgMid').textContent = '30 Mbps'; $('lgLo').textContent = '1 Mbps';
   } else {
     const act = []; for (let u = 0; u < KMAX; u++) if (S.uact[sn * KMAX + u]) act.push(u);
-    for (let c = 0; c < NC; c++) { const db = 10 * Math.log10(Math.max(sinrAt(CX[c], CY[c], CH[c], act, sn), 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(data, 4 * c, k, 60 + 150 * k); }
+    const mm = mapMode === 'sinr26';
+    for (let c = 0; c < NC; c++) { const v = sinrAt(CX[c], CY[c], CH[c], act, sn, mm), db = 10 * Math.log10(Math.max(v, 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(data, 4 * c, k, v > 0 ? 60 + 150 * k : 0); }
     for (let q = 0; q < FN; q++) {
       if (!FIN[q]) { fd[4 * q + 3] = 0; continue; }
-      const db = 10 * Math.log10(Math.max(sinrAt(FXc[q], FYc[q], FCH[q], act, sn), 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(fd, 4 * q, k, 225);
+      const v = sinrAt(FXc[q], FYc[q], FCH[q], act, sn, mm), db = 10 * Math.log10(Math.max(v, 1e-6)), k = clamp((db + 5) / 35, 0, 1); paint(fd, 4 * q, k, v > 0 ? 225 : 0);
     }
     $('lgHi').textContent = '30 dB'; $('lgMid').textContent = '12,5'; $('lgLo').textContent = '−5 dB';
   }
