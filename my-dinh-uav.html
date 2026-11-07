@@ -175,6 +175,15 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     </section>
 
     <section>
+      <h2 id="fl-h">Số UAV bay cùng lúc</h2>
+      <div class="seg" role="group" aria-labelledby="fl-h">
+        <button data-fl="16" aria-pressed="false"><span class="t">16 UAV</span><span class="d">Đội nhỏ, thiếu cả trong giờ biểu diễn bình thường</span></button>
+        <button data-fl="24" aria-pressed="true"><span class="t">24 UAV</span><span class="d">Đủ lúc bình thường, thiếu ở các đỉnh nhu cầu</span></button>
+        <button data-fl="0" aria-pressed="false"><span class="t">Tối đa 48 UAV</span><span class="d">Bay thêm theo nhu cầu, nhưng trong sân chỉ xếp được 24 chiếc trên đường chạy và nhiễu tăng theo số UAV</span></button>
+      </div>
+    </section>
+
+    <section>
       <h2 id="al-h">Khi thiếu tài nguyên</h2>
       <div class="seg" role="group" aria-labelledby="al-h">
         <button data-al="bit" aria-pressed="true"><span class="t">Chia đều theo bit</span><span class="d">Mọi bit như nhau: dịch vụ nào cũng bị cắt cùng một tỉ lệ</span></button>
@@ -192,11 +201,12 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 
     <section>
       <h2>Ước tính đội UAV</h2>
+      <p class="lede" style="font-size:13px">Số UAV cần nếu muốn đáp ứng đủ nhu cầu mọi lúc, không phụ thuộc số UAV đang chọn ở trên. Lúc cao điểm, số cần trong sân vượt xa 24 chiếc xếp được trên đường chạy, nên UAV một mình không thể đáp ứng hết.</p>
       <dl class="sizing" id="sizing"><dt>Đang tính</dt><dd>–</dd></dl>
     </section>
 
     <div class="note">
-      <p>Mọi UAV đều bay tự do và mang hai radio: 26 GHz (800 MHz, mảng 16×16) và 3,5 GHz (100 MHz, mảng 8×8), mỗi radio 4 búp. UAV trong sân chỉ bay trên đường chạy, không bay trên đầu khán giả. Kênh Al-Hourani đô thị, có suy hao do mái che khán đài A, B và do đám đông.</p>
+      <p>Mọi UAV đều bay tự do và mang hai radio: 26 GHz (800 MHz, mảng 16×16) và 3,5 GHz (100 MHz, mảng 8×8), mỗi radio 4 búp. Chỉ khoảng 15% điện thoại có băng 26 GHz, phần còn lại chỉ dùng 3,5 GHz. Ở 26 GHz, cơ thể người chắn sóng thêm khoảng 15 dB. UAV trong sân chỉ bay trên đường chạy, không bay trên đầu khán giả. Kênh Al-Hourani đô thị, có suy hao do mái che khán đài A, B và do đám đông.</p>
       <p>Năm lớp dịch vụ, tỉ lệ sử dụng theo pha và mức độ quan trọng của chúng là giả định minh họa. Khi ưu tiên theo giá trị, mỗi UAV phục vụ lần lượt các lớp từ quan trọng nhất trở xuống.</p>
       <p>Vị trí bãi xe, điểm đón và khu chờ tài xế quanh sân là giả định, không theo bản đồ thực.</p>
     </div>
@@ -420,10 +430,10 @@ for (let k = 0; k < 800; k++) { const th = rnd() * 2 * Math.PI, p = se(U(40, 200
 // ---------- radio ----------
 const A_U = 9.61, B_U = 0.16, ETA_L = 1, ETA_N = 20;           // Al-Hourani, urban
 const N0 = Math.pow(10, -17.4);                                   // mW/Hz
-const MM = { f: 26e9, B: 800, P: Math.pow(10, 3.7), N: 16, L: 4, nf: Math.pow(10, 0.9), body: 3, roof: 30, wall: 40, ue: Math.pow(10, 3.1), thr: 0.5, range: 320 };
+const MM = { f: 26e9, B: 800, P: Math.pow(10, 3.7), N: 16, L: 4, nf: Math.pow(10, 0.9), body: 15, roof: 30, wall: 40, ue: Math.pow(10, 3.1), thr: 0.5, range: 320 };
 const LB = { f: 3.5e9, B: 100, P: Math.pow(10, 3.7), N: 8, L: 4, nf: Math.pow(10, 0.7), body: 1, roof: 15, wall: 20, ue: Math.pow(10, 2.3), thr: 0.3, range: 650 };
 MM.noise = N0 * MM.B * 1e6 * MM.nf; LB.noise = N0 * LB.B * 1e6 * LB.nf;
-const ETA = 0.7;
+const ETA = 0.7, MMS = 0.15;     // MMS: share of phones that support 26 GHz (most phones in Vietnam have only n78)
 const elemDb = a => 8 - Math.min(12 * (a / 65) ** 2, 30);
 const link = (R, ux, uy, uh, c, extraDb) => linkXY(R, ux, uy, uh, CX[c], CY[c], CH[c], extraDb);
 function linkXY(R, ux, uy, uh, cx, cy, ch, extraDb) {
@@ -467,17 +477,18 @@ const lossOf = (R, b) => b === 2 ? R.wall : b === 1 ? R.roof : 0;
 // ground gateways with fibre, wireless backhaul from each UAV (E-band, 10 Gbps)
 const GW = [[175, 175], [-175, 175], [-175, -175], [175, -175]];
 const BH_LINK = 10000, BH_GW = 40000, BH_RANGE = 700, LEO_DL = 250, LEO_UL = 30;
-const KMAX = 48, PLAN = 4800;     // planning capacity per UAV: ~60 % of 26 GHz + 3.5 GHz radios
+let FLEET = 24;                    // UAVs that can be airborne at once (Infinity: as many as demand needs)
+const KMAX = 48, PLAN = 1000;     // planning capacity per UAV, Mbps: about 3.5 GHz capacity plus the 26 GHz share
 
 // ---------- simulation storage ----------
 const S = {
   cellD: new Float32Array(NS * NC), loadM: new Float32Array(NS * KMAX), loadL: new Float32Array(NS * KMAX),
   upos: new Float32Array(NS * KMAX * 3), uact: new Uint8Array(NS * KMAX), utag: new Uint8Array(NS * KMAX), bhGw: new Int8Array(NS * KMAX),
   beams: new Float32Array(NS * KMAX * 12).fill(NaN),
-  capDl: new Float32Array(NS * KMAX), capUl: new Float32Array(NS * KMAX), cd: new Float32Array(NS * (KMAX + 1) * NCL * 3),
+  rc: new Float32Array(NS * KMAX * 4), msh: new Float32Array(NS * KMAX * 2), cd: new Float32Array(NS * (KMAX + 1) * NCL * 3),
   Ddl: new Float32Array(NS), Dul: new Float32Array(NS), De: new Float32Array(NS), Du: new Float32Array(NS), Dm: new Float32Array(NS),
   acc: new Float32Array(NS), hyb: new Float32Array(NS), leo: new Float32Array(NS), nU: new Float32Array(NS), nB: new Float32Array(NS), nO: new Float32Array(NS),
-  maxLoad: new Float32Array(NS), inside: new Float32Array(NS), outside: new Float32Array(NS), drivers: new Float32Array(NS)
+  need: new Float32Array(NS), needB: new Float32Array(NS), maxLoad: new Float32Array(NS), inside: new Float32Array(NS), outside: new Float32Array(NS), drivers: new Float32Array(NS)
 };
 const ux = new Float64Array(KMAX), uy = new Float64Array(KMAX), uh = new Float64Array(KMAX).fill(100), ua = new Uint8Array(KMAX), utg = new Uint8Array(KMAX);
 let prevM = new Float32Array(KMAX).fill(0.5), prevL = new Float32Array(KMAX).fill(0.5);
@@ -545,7 +556,10 @@ function simStep(s) {
 
   // fleet size: capacity inside the bowl; coverage and capacity outside
   let Kb = Db > 30 ? Math.ceil(Db / PLAN) : 0, Ko = Do > 30 ? Math.max(coverCount(out, 180), Math.ceil(Do / PLAN)) : 0;
+  S.need[s] = Kb + Ko; S.needB[s] = Kb;
   Kb = Math.min(Kb, 24); Ko = Math.min(Ko, KMAX - Kb);
+  // limited fleet: split the airborne UAVs between bowl and outside in proportion to need
+  if (Kb + Ko > FLEET) { const k = Kb ? Math.max(1, Math.round(FLEET * Kb / (Kb + Ko))) : 0; Kb = k; Ko = Math.max(0, FLEET - k); }
   placeRegion(0, bowl, bowl.map(c => dl[c] + ul[c]), Kb);
   placeRegion(1, out, out.map(c => Math.sqrt(dl[c] + ul[c])), Ko);
 
@@ -567,15 +581,19 @@ function simStep(s) {
     for (const q of order) {
       const c = cells[q], base = q * nA * 6; let ItM = 0, ItL = 0;
       for (let a = 0; a < nA; a++) { ItM += Math.min(lM[act[a]], 1) * LK[base + a * 6 + 1]; ItL += Math.min(lL[act[a]], 1) * LK[base + a * 6 + 4]; }
-      let best = -1, bb = 0, bl = 1e18, bn = 0;
+      let best = -1, bb = 1, bl = 1e18, bnM = 0, bnL = 0;
       for (let a = 0; a < nA; a++) {
         const u = act[a], o = base + a * 6;
-        const sM = seOf(LK[o] / (ItM - Math.min(lM[u], 1) * LK[o + 1] + MM.noise), 5.5);
-        if (sM >= MM.thr) { const n = (dl[c] / (MM.B * sM) + ul[c] / (MM.B * Math.max(seOf(LK[o + 2] / (2 * MM.noise), 4.5), 0.1))) / (MM.L * ETA); if (nM[u] + n < bl) { bl = nM[u] + n; best = u; bb = 0; bn = n; } }
         const sL = seOf(LK[o + 3] / (ItL - Math.min(lL[u], 1) * LK[o + 4] + LB.noise), 5.5);
-        if (sL >= LB.thr) { const n = (dl[c] / (LB.B * sL) + ul[c] / (LB.B * Math.max(seOf(LK[o + 5] / (2 * LB.noise), 4.5), 0.1))) / (LB.L * ETA); if (nL[u] + n < bl) { bl = nL[u] + n; best = u; bb = 1; bn = n; } }
+        if (sL < LB.thr) continue;
+        const cL = (dl[c] / (LB.B * sL) + ul[c] / (LB.B * Math.max(seOf(LK[o + 5] / (2 * LB.noise), 4.5), 0.1))) / (LB.L * ETA);
+        const sM = seOf(LK[o] / (ItM - Math.min(lM[u], 1) * LK[o + 1] + MM.noise), 5.5);
+        let nm = 0, nl = cL, b = 1;
+        if (sM >= MM.thr) { nm = MMS * (dl[c] / (MM.B * sM) + ul[c] / (MM.B * Math.max(seOf(LK[o + 2] / (2 * MM.noise), 4.5), 0.1))) / (MM.L * ETA); nl = (1 - MMS) * cL; b = 0; }
+        const v = Math.max(nL[u] + nl, nM[u] + nm);
+        if (v < bl) { bl = v; best = u; bb = b; bnM = nm; bnL = nl; }
       }
-      srvU[q] = best; srvB[q] = bb; if (best >= 0) (bb ? nL : nM)[best] += bn;
+      srvU[q] = best; srvB[q] = bb; if (best >= 0) { nM[best] += bnM; nL[best] += bnL; }
     }
     lM = nM; lL = nL;
   }
@@ -585,15 +603,17 @@ function simStep(s) {
   const dMd = new Float32Array(KMAX), dMu = new Float32Array(KMAX), dLd = new Float32Array(KMAX), dLu = new Float32Array(KMAX);
   for (let q = 0; q < nC; q++) {
     const u = srvU[q], c = cells[q], slot = u < 0 ? KMAX : u;
-    if (u >= 0) { if (srvB[q]) { dLd[u] += dl[c]; dLu[u] += ul[c]; } else { dMd[u] += dl[c]; dMu[u] += ul[c]; } }
+    if (u >= 0) { const m = srvB[q] ? 0 : MMS; dMd[u] += m * dl[c]; dMu[u] += m * ul[c]; dLd[u] += (1 - m) * dl[c]; dLu[u] += (1 - m) * ul[c]; }
     for (let j = 0; j < NCL; j++) { const o = ((s * (KMAX + 1) + slot) * NCL + j) * 3, ci = (c * NCL + j) * 3; S.cd[o] += cls[ci]; S.cd[o + 1] += cls[ci + 1]; S.cd[o + 2] += cls[ci + 2]; }
   }
+  // radio capacity per UAV (26 GHz dl, ul, 3.5 GHz dl, ul) and the 26 GHz share of its demand
   for (const u of act) { const o = s * KMAX + u, mM = Math.max(lM[u], 1e-6), mL = Math.max(lL[u], 1e-6);
-    S.capDl[o] = dMd[u] / mM + dLd[u] / mL; S.capUl[o] = dMu[u] / mM + dLu[u] / mL; }
+    S.rc[o * 4] = dMd[u] / mM; S.rc[o * 4 + 1] = dMu[u] / mM; S.rc[o * 4 + 2] = dLd[u] / mL; S.rc[o * 4 + 3] = dLu[u] / mL;
+    S.msh[o * 2] = dMd[u] / Math.max(dMd[u] + dLd[u], 1e-9); S.msh[o * 2 + 1] = dMu[u] / Math.max(dMu[u] + dLu[u], 1e-9); }
 
   // served traffic per UAV, then backhaul
   const accDl = new Float32Array(KMAX), accUl = new Float32Array(KMAX);
-  for (let q = 0; q < nC; q++) { const u = srvU[q]; if (u < 0) continue; const ld = srvB[q] ? lL[u] : lM[u], f = ld > 1 ? 1 / ld : 1;
+  for (let q = 0; q < nC; q++) { const u = srvU[q]; if (u < 0) continue; const m = srvB[q] ? 0 : MMS, f = (1 - m) * Math.min(1, 1 / Math.max(lL[u], 1e-6)) + m * Math.min(1, 1 / Math.max(lM[u], 1e-6));
     accDl[u] += dl[cells[q]] * f; accUl[u] += ul[cells[q]] * f; }
   let acc = 0, hyb = 0, leo = 0; const gwIn = new Float32Array(GW.length);
   for (const u of act) {
@@ -610,7 +630,8 @@ function simStep(s) {
   for (let q = 0; q < nC; q++) if (srvU[q] >= 0) per[srvU[q]].push(q);
   per.forEach((list, u) => { list.sort((a, b) => (dl[cells[b]] + ul[cells[b]]) - (dl[cells[a]] + ul[cells[a]])); const pk = [];
     for (const q of list) { if (pk.length >= 4) break; const c = cells[q]; if (pk.every(p => Math.hypot(CX[cells[p]] - CX[c], CY[cells[p]] - CY[c]) >= 50)) pk.push(q); }
-    pk.forEach((q, b) => { const o = ((s * KMAX + u) * 4 + b) * 3; S.beams[o] = CX[cells[q]]; S.beams[o + 1] = CY[cells[q]]; S.beams[o + 2] = srvB[q]; }); });
+    pk.forEach((q, b) => { const o = ((s * KMAX + u) * 4 + b) * 3; S.beams[o] = CX[cells[q]]; S.beams[o + 1] = CY[cells[q]]; S.beams[o + 2] = 1; });
+    const mi = pk.findIndex(q => !srvB[q]); if (mi >= 0) S.beams[((s * KMAX + u) * 4 + mi) * 3 + 2] = 0; });
 
   let mx = 0, nB = 0;
   for (let u = 0; u < KMAX; u++) { const o = s * KMAX + u; S.uact[o] = ua[u]; S.utag[o] = utg[u]; S.loadM[o] = lM[u]; S.loadL[o] = lL[u];
@@ -853,6 +874,14 @@ function updateLabels() {
 // ---------- allocation when resources are short ----------
 let policy = 'bit', capScale = 1;
 const AL = { ess: new Float32Array(NS), val: new Float32Array(NS), srv: new Float32Array(NS), frac: new Float32Array(NS * NCL), users: new Float32Array(NS * NCL) };
+// share capacity among service classes: in proportion to demand, or strictly by importance
+function pick(d, cap, order) {
+  const g = new Float64Array(NCL); let tot = 0; for (let j = 0; j < NCL; j++) tot += d[j];
+  if (tot <= 0) return g;
+  if (policy === 'bit') { const f = Math.min(1, cap / tot); for (let j = 0; j < NCL; j++) g[j] = d[j] * f; }
+  else { let rem = cap; for (const j of order) { const v = Math.min(d[j], rem); g[j] = v; rem -= v; } }
+  return g;
+}
 function allocate() {
   for (let s = 0; s < NS; s++) {
     const w = WGT[phaseOf(s * STEP)], order = [4, 0, 1, 2, 3].sort((a, b) => w[b] - w[a]);
@@ -860,20 +889,17 @@ function allocate() {
     let served = 0;
     for (let u = 0; u <= KMAX; u++) {
       const base = (s * (KMAX + 1) + u) * NCL * 3;
-      let cd = 0, cu = 0;
+      let g2 = [new Float64Array(NCL), new Float64Array(NCL)];
       if (u < KMAX && S.uact[s * KMAX + u]) {
-        const o = s * KMAX + u, g = S.bhGw[o]; cd = S.capDl[o]; cu = S.capUl[o];
-        if (bh === 'leo' || g < 0) { cd = Math.min(cd, 250); cu = Math.min(cu, 30); }
-        else if (cd + cu > 10000) { const k = 10000 / (cd + cu); cd *= k; cu *= k; }
-        cd *= capScale; cu *= capScale;
+        // each radio shares its own capacity among the users it can reach, then the backhaul caps the total
+        const o = s * KMAX + u, g = S.bhGw[o];
+        g2 = [0, 1].map(dir => { const m = S.msh[o * 2 + dir], D = Array.from({ length: NCL }, (_, j) => S.cd[base + j * 3 + dir]);
+          const gM = pick(D.map(v => v * m), S.rc[o * 4 + dir] * capScale, order), gL = pick(D.map(v => v * (1 - m)), S.rc[o * 4 + 2 + dir] * capScale, order);
+          return gM.map((v, j) => v + gL[j]); });
+        const sum = a => a.reduce((x, y) => x + y, 0), td = sum(g2[0]), tu = sum(g2[1]);
+        if (bh === 'leo' || g < 0) { g2 = [pick(g2[0], LEO_DL, order), pick(g2[1], LEO_UL, order)]; }
+        else if (td + tu > BH_LINK) { const k = BH_LINK / (td + tu); g2 = [pick(g2[0], td * k, order), pick(g2[1], tu * k, order)]; }
       }
-      const g2 = [new Float64Array(NCL), new Float64Array(NCL)];
-      [cd, cu].forEach((cap, dir) => {
-        let tot = 0; for (let j = 0; j < NCL; j++) tot += S.cd[base + j * 3 + dir];
-        if (tot <= 0) return;
-        if (policy === 'bit') { const f = Math.min(1, cap / tot); for (let j = 0; j < NCL; j++) g2[dir][j] = S.cd[base + j * 3 + dir] * f; }
-        else { let rem = cap; for (const j of order) { const v = Math.min(S.cd[base + j * 3 + dir], rem); g2[dir][j] = v; rem -= v; } }
-      });
       for (let j = 0; j < NCL; j++) {
         const d = S.cd[base + j * 3] + S.cd[base + j * 3 + 1], n = S.cd[base + j * 3 + 2], gj = g2[0][j] + g2[1][j];
         if (n <= 0 && d <= 0) continue;
@@ -964,26 +990,35 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { th
 
 function sizing() {
   let pk = 0, pkT = 0, mx = 0, mxT = 0, data = 0;
-  for (let s = 0; s < NS; s++) { const d = S.Ddl[s] + S.Dul[s]; if (d > pk) { pk = d; pkT = s * STEP; } if (S.nU[s] > mx) { mx = S.nU[s]; mxT = s * STEP; } data += d * STEP * 60 / 8 / 1e6; }
+  for (let s = 0; s < NS; s++) { const d = S.Ddl[s] + S.Dul[s]; if (d > pk) { pk = d; pkT = s * STEP; } if (S.need[s] > mx) { mx = S.need[s]; mxT = s * STEP; } data += d * STEP * 60 / 8 / 1e6; }
   const sm = Math.round(mxT / STEP), spare = Math.ceil(mx * 12 / 35);
   let showD = 0, showH = 0, showL = 0; for (let s = 105; s < 195; s++) { showD += S.Ddl[s] + S.Dul[s]; showH += S.hyb[s]; showL += S.leo[s]; }
-  let mxB = 0, mxBT = 0; for (let s = 0; s < NS; s++) if (S.nB[s] > mxB) { mxB = S.nB[s]; mxBT = s * STEP; }
-  const rows = [['UAV bay cùng lúc, tối đa', nf(mx) + ' lúc ' + clock(mxT)], ['Lúc đó: trong sân / ngoài sân', nf(S.nB[sm]) + ' / ' + nf(S.nO[sm])],
+  let mxB = 0, mxBT = 0; for (let s = 0; s < NS; s++) if (S.needB[s] > mxB) { mxB = S.needB[s]; mxBT = s * STEP; }
+  const rows = [['UAV cần bay cùng lúc, tối đa', nf(mx) + ' lúc ' + clock(mxT)], ['Lúc đó: trong sân / ngoài sân', nf(S.needB[sm]) + ' / ' + nf(mx - S.needB[sm])],
     ['Trong sân, tối đa', nf(mxB) + ' lúc ' + clock(mxBT)], ['Dự phòng thay pin', nf(spare)], ['Tổng đội bay', nf(mx + spare)],
     ['Đỉnh nhu cầu', nf(pk / 1000, 1) + ' Gbps lúc ' + clock(pkT)], ['Tổng dữ liệu', nf(data, 1) + ' TB (' + nf(data * 1e3 / NA, 2) + ' GB/khán giả)'],
     ['Phục vụ khi biểu diễn: gateway / chỉ LEO', nf(showH / showD * 100) + '% / ' + nf(showL / showD * 100) + '%']];
   $('sizing').innerHTML = rows.map(([a, b], i) => `<dt${i === 4 ? ' class="total"' : ''}>${a}</dt><dd${i === 4 ? ' class="total"' : ''}>${b}</dd>`).join('');
-  window.__sizing = { mx, mxT: clock(mxT), inBowlAtMax: S.nB[sm], outAtMax: S.nO[sm], mxB, mxBT: clock(mxBT), spare, fleet: mx + spare, peakGbps: pk / 1000, peakT: clock(pkT), dataTB: data, showGw: showH / showD, showLeo: showL / showD };
+  window.__sizing = { mx, mxT: clock(mxT), inBowlAtMax: S.needB[sm], mxB, mxBT: clock(mxBT), spare, fleet: mx + spare, peakGbps: pk / 1000, peakT: clock(pkT), dataTB: data, showGw: showH / showD, showLeo: showL / showD };
 }
 
 // ---------- boot ----------
 theme();
-async function boot() {
-  buildAgents();
+async function runSim() {
+  ready = false; window.__ready = false; $('loading').style.display = '';
+  ua.fill(0); prevM.fill(0.5); prevL.fill(0.5); S.cd.fill(0); S.beams.fill(NaN);
   for (let s = 0; s < NS; s++) { simStep(s); if (s % 6 === 0) { $('loadFill').style.width = (s / NS * 100) + '%'; $('loadTxt').textContent = 'Đang mô phỏng 7,5 giờ sự kiện, ' + Math.round(s / NS * 100) + '%'; await new Promise(r => setTimeout(r)); } }
-  allocate(); ready = true; sizing(); $('loading').style.display = 'none'; size(); drawChart();
+  allocate(); ready = true; $('loading').style.display = 'none'; lastT = -1; lastMapStep = -1; drawChart();
   window.__S = S; window.__ready = true;
 }
+async function boot() {
+  buildAgents();
+  await runSim(); sizing(); size(); drawChart();
+}
+let simBusy = false;
+document.querySelectorAll('[data-fl]').forEach(b => b.onclick = async () => { if (simBusy) return; simBusy = true;
+  FLEET = +b.dataset.fl || Infinity; document.querySelectorAll('[data-fl]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  await runSim(); sizing(); simBusy = false; });
 boot();
 
 let prev = performance.now();
